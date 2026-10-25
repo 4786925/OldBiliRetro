@@ -648,10 +648,10 @@ public class VideoApi {
                     }
                 }
             }
+            // 兜底：https 原始地址始终保留（下载走系统 TLS，必须能拿到 https）
             for (int i = 0; i < all.size(); i++) {
                 String u = all.get(i);
-                if (u.startsWith("https://") && !candidates.contains(u)
-                        && !candidates.contains("http://" + u.substring(8))) {
+                if (u.startsWith("https://") && !candidates.contains(u)) {
                     candidates.add(u);
                 }
             }

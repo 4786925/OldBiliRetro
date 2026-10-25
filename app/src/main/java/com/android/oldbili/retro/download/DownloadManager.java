@@ -170,6 +170,25 @@ public class DownloadManager {
         return null;
     }
 
+    /**
+     * 把 B 站 CDN 的明文 http 地址规范化为 https。
+     * CDN 已关闭 http 口（返回 403/959），下载走系统 TLS 必须用 https。
+     */
+    private static String toHttps(String url) {
+        if (url == null || !url.startsWith("http://")) {
+            return url;
+        }
+        String host = url.substring(7);
+        int slash = host.indexOf('/');
+        String hostPart = slash > 0 ? host.substring(0, slash) : host;
+        if (hostPart.contains("bilivideo") || hostPart.contains("upos")
+                || hostPart.contains("hdslb") || hostPart.contains("mcdn")
+                || hostPart.contains("akamaized") || hostPart.contains("bilivideo.cn")) {
+            return "https://" + host;
+        }
+        return url;
+    }
+
     private void runTask(final DownloadTask task) {
         try {
             DownloadPathUtil.Folder folder = DownloadPathUtil.resolve(mContext);
@@ -180,27 +199,82 @@ public class DownloadManager {
                 }
             }
 
-            // 拿播放地址（单流 mp4，方便直接下）
+            // 拿播放地址（单流 mp4，方便直接下）：取全部候选线路
             String idType = task.bvid != null && task.bvid.length() > 0 ? "bvid" : "aid";
             String id = idType.equals("bvid") ? task.bvid : String.valueOf(task.aid);
-            String[] play = VideoApi.getPlayUrl(idType, id, task.cid, task.qn);
-            String videoUrl = play[0];
+            Object[] play = VideoApi.getPlayUrlCandidates(idType, id, task.cid, task.qn);
+            @SuppressWarnings("unchecked")
+            java.util.List<String> rawCandidates = (java.util.List<String>) play[0];
+            if (rawCandidates == null || rawCandidates.size() == 0) {
+                throw new java.io.IOException("未取到播放地址");
+            }
+            // 下载走系统 TLS：https 候选优先，http 明文节点仅作兜底
+            // （B 站已关闭明文 CDN 口，http 化地址会返回 959，直接放弃）
+            java.util.List<String> ordered = new java.util.ArrayList<String>();
+            // 先把所有候选规范化为 https 形式（CDN 已拒绝明文 http，会 403）
+            for (int i = 0; i < rawCandidates.size(); i++) {
+                String u = toHttps(rawCandidates.get(i));
+                if (u != null && !ordered.contains(u)) {
+                    ordered.add(u);
+                }
+            }
+            // 再补上原样的 http 地址作为最后的兜底
+            for (int i = 0; i < rawCandidates.size(); i++) {
+                String u = rawCandidates.get(i);
+                if (u != null && !ordered.contains(u)) {
+                    ordered.add(u);
+                }
+            }
 
             // 断点续传：写入 .part，完成后改名正式文件
             final String partName = task.fileName + ".part";
             long startByte = folder.length(partName);
-            final OutputStream out = folder.openOutputStream(partName, startByte > 0);
-            try {
-                boolean done = downloadWithPause(task, videoUrl, out, startByte);
-                if (!done) {
+            boolean done = false;
+            Exception lastError = null;
+            for (int ci = 0; ci < ordered.size(); ci++) {
+                String videoUrl = ordered.get(ci);
+                OutputStream out = null;
+                try {
+                    out = folder.openOutputStream(partName, startByte > 0);
+                    done = downloadWithPause(task, videoUrl, out, startByte);
+                    if (done) {
+                        break;
+                    }
+                    if (task.state == DownloadTask.STATE_PAUSED) {
+                        break;
+                    }
+                } catch (Exception e) {
+                    lastError = e;
+                    android.util.Log.w("Download", "线路[" + ci + "]失败: " + e.getMessage()
+                            + " -> " + videoUrl.substring(0, Math.min(70, videoUrl.length())));
+                    // 换线路时丢弃半截文件，重新从 0 开始
+                    try {
+                        if (out != null) {
+                            out.close();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    out = null;
+                    try {
+                        folder.delete(partName);
+                    } catch (Exception ignored) {
+                    }
+                    startByte = 0;
+                } finally {
+                    try {
+                        if (out != null) {
+                            out.close();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+            if (!done) {
+                if (task.state == DownloadTask.STATE_PAUSED) {
                     // 被暂停：保留 .part 进度，状态保持暂停
                     return;
                 }
-            } finally {
-                try {
-                    out.close();
-                } catch (Exception ignored) {
-                }
+                throw lastError != null ? lastError : new java.io.IOException("所有线路均下载失败");
             }
 
             // 完成：改名 + 封面
@@ -244,9 +318,12 @@ public class DownloadManager {
         try {
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(20000);
+            // UA 必须与播放器一致（CDN 会按 UA 校验，自制 UA 会 403）
             conn.setRequestProperty("User-Agent",
-                    "Mozilla/5.0 (Linux; Android 4.0; OldBiliRetro) AppleWebKit/537.36");
+                    com.android.oldbili.retro.net.HttpUtil.USER_AGENT);
             conn.setRequestProperty("Referer", "https://www.bilibili.com/");
+            conn.setRequestProperty("Origin", "https://www.bilibili.com");
+            conn.setRequestProperty("Accept", "*/*");
             // CDN 防盗链 Cookie（不带会 403）
             String dCookie = com.android.oldbili.retro.net.HttpUtil.cdnCookie();
             if (dCookie != null && dCookie.length() > 0) {
