@@ -1,0 +1,31 @@
+// OldBiliRetro —— 老版哔哩，为古老设备而生
+// 工具链刻意停留在 2016-2017 年的黄金组合（AGP 2.3.2 + Gradle 3.3 + JDK 7），
+// 依赖库全部来自 2013-2014 年，保证 minSdk 6（Android 2.0.1）起步的老设备可用。
+buildscript {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.google.com' }
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.2'
+    }
+}
+
+allprojects {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.google.com' }
+        jcenter()
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

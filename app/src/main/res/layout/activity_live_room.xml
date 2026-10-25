@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/live_cover_area"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="@color/cover_bg">
+
+        <ImageView
+            android:id="@+id/live_cover"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter" />
+
+        <ImageButton
+            android:id="@+id/live_play"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_play"
+            android:background="#aa000000" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/live_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/live_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:textColor="@color/text_tertiary"
+        android:textSize="12sp" />
+
+    <Button
+        android:id="@+id/live_viewers"
+        style="@style/RetroButton.Small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="观众列表" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:background="#111111">
+
+        <EditText
+            android:id="@+id/live_danmaku_input"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="#2a2a2a"
+            android:hint="发个弹幕见证当下…"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_tertiary"
+            android:textSize="13sp"
+            android:paddingLeft="8dp"
+            android:singleLine="true" />
+
+        <Button
+            android:id="@+id/live_danmaku_send"
+            style="@style/RetroButton.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginLeft="6dp"
+            android:text="发送" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 卡片底：深灰圆角，所有卡片统一用它 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#ff1d1d1d" />
+    <corners android:radius="4dp" />
+</shape>

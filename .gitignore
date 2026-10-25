@@ -1,0 +1,33 @@
+# Android / Gradle
+.gradle/
+build/
+app/build/
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# local config & signing (NEVER commit)
+local.properties
+*.jks
+*.keystore
+*.p12
+signing.properties
+keystore.properties
+
+# build artifacts, logs, internal helper scripts
+build-tools/
+
+# misc
+*.hprof
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.bak
+*.tmp
+
+# third-party reference sources (not published)
+ref/

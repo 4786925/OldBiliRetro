@@ -1,0 +1,645 @@
+/*
+ * Copyright (C) 2013 Chen Hui <calmer91@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package master.flame.danmaku.ui.widget;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.os.Build;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.View;
+
+import java.util.LinkedList;
+import java.util.Locale;
+
+import master.flame.danmaku.controller.DrawHandler;
+import master.flame.danmaku.controller.DrawHandler.Callback;
+import master.flame.danmaku.controller.DrawHelper;
+import master.flame.danmaku.controller.IDanmakuView;
+import master.flame.danmaku.controller.IDanmakuViewController;
+import master.flame.danmaku.danmaku.model.BaseDanmaku;
+import master.flame.danmaku.danmaku.model.IDanmakus;
+import master.flame.danmaku.danmaku.parser.BaseDanmakuParser;
+import master.flame.danmaku.danmaku.renderer.IRenderer.RenderingState;
+
+public class DanmakuView extends View implements IDanmakuView, IDanmakuViewController {
+
+    public static final String TAG = "DanmakuView";
+
+    private static int sSdkInt = -1;
+
+    private static int getSdkInt() {
+        if (sSdkInt < 0) {
+            try {
+                sSdkInt = Build.VERSION.class.getField("SDK_INT").getInt(null);
+            } catch (Exception e) {
+                try {
+                    sSdkInt = Integer.parseInt(Build.VERSION.SDK);
+                } catch (Exception e2) {
+                    sSdkInt = 0;
+                }
+            }
+        }
+        return sSdkInt;
+    }
+
+    private Callback mCallback;
+
+    private HandlerThread mHandlerThread;
+
+    private DrawHandler handler;
+    
+    private boolean isSurfaceCreated;
+
+    private boolean mEnableDanmakuDrwaingCache = true;
+
+    private OnDanmakuClickListener mOnDanmakuClickListener;
+
+    private DanmakuTouchHelper mTouchHelper;
+    
+    private boolean mShowFps;
+
+    private boolean mDanmakuVisible = true;
+
+    protected int mDrawingThreadType = THREAD_TYPE_NORMAL_PRIORITY;
+
+    private Object mDrawMonitor = new Object();
+
+    private boolean mDrawFinished = false;
+
+    private boolean mRequestRender = false;
+
+    private long mUiThreadId;
+
+    public DanmakuView(Context context) {
+        super(context);
+        init();
+    }
+
+    private void init() {
+        mUiThreadId = Thread.currentThread().getId();
+        setBackgroundColor(Color.TRANSPARENT);
+        setDrawingCacheBackgroundColor(Color.TRANSPARENT);
+        DrawHelper.useDrawColorToClearCanvas(true, false);
+        mTouchHelper = DanmakuTouchHelper.instance(this);
+    }
+
+    public DanmakuView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init();
+    }
+
+    public DanmakuView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        init();
+    }
+
+    public void addDanmaku(BaseDanmaku item) {
+        if (handler != null) {
+            handler.addDanmaku(item);
+        }
+    }
+    
+    @Override
+    public void removeAllDanmakus() {
+        if (handler != null) {
+            handler.removeAllDanmakus();
+        }
+    }
+    
+    @Override
+    public void removeAllLiveDanmakus() {
+        if (handler != null) {
+            handler.removeAllLiveDanmakus();
+        }
+    }
+
+    @Override
+    public IDanmakus getCurrentVisibleDanmakus() {
+        if (handler != null) {
+            return handler.getCurrentVisibleDanmakus();
+        }
+
+        return null;
+    }
+
+    public void setCallback(Callback callback) {
+        mCallback = callback;
+        if (handler != null) {
+            handler.setCallback(callback);
+        }
+    }
+
+    private DrawHandler.Clock mClock;
+
+    @Override
+    public void setClock(DrawHandler.Clock clock) {
+        mClock = clock;
+        if (handler != null) {
+            handler.setClock(clock);
+        }
+    }
+
+    @Override
+    public void release() {
+        stop();
+        if(mDrawTimes!= null) mDrawTimes.clear();
+    }
+
+    @Override
+    public void stop() {
+        stopDraw();
+    }
+
+    private void stopDraw() {
+        if (handler != null) {
+            handler.quit();
+            handler = null;
+        }
+        if (mHandlerThread != null) {
+            final HandlerThread ht = mHandlerThread;
+            mHandlerThread = null;
+            Thread recycler = new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        ht.join();
+                    } catch (InterruptedException e) {
+                    }
+                    // HandlerThread.quit() 是 API 18+，直接引用会在 API<18 上 VerifyError。
+                    // Looper.quit() 自 API 1 就有，且功能等价。
+                    try {
+                        ht.getLooper().quit();
+                    } catch (Throwable t) {
+                    }
+                }
+            }, "DFM-ThreadRecycler");
+            recycler.setDaemon(true);
+            recycler.start();
+        }
+    }
+    
+    protected Looper getLooper(int type){
+        if (mHandlerThread != null) {
+            try {
+                mHandlerThread.getLooper().quit();
+            } catch (Throwable t) {
+            }
+            mHandlerThread = null;
+        }
+        
+        int priority;
+        switch (type) {
+            case THREAD_TYPE_MAIN_THREAD:
+                return Looper.getMainLooper();
+            case THREAD_TYPE_HIGH_PRIORITY:
+                priority = android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY;
+                break;
+            case THREAD_TYPE_LOW_PRIORITY:
+                priority = android.os.Process.THREAD_PRIORITY_LOWEST;
+                break;
+            case THREAD_TYPE_NORMAL_PRIORITY:
+            default:
+                priority = android.os.Process.THREAD_PRIORITY_DEFAULT;
+                break;
+        }
+        String threadName = "DFM Handler Thread #"+priority;
+        mHandlerThread = new HandlerThread(threadName, priority);
+        mHandlerThread.start();
+        return mHandlerThread.getLooper();
+    }
+
+    private void prepare() {
+        if (handler == null)
+            handler = new DrawHandler(getLooper(mDrawingThreadType), this, mDanmakuVisible);
+        handler.setClock(mClock);
+    }
+
+    @Override
+    public void prepare(BaseDanmakuParser parser) {
+    	prepare();
+        handler.setParser(parser);
+        handler.setCallback(mCallback);
+        handler.prepare();
+    }
+
+    @Override
+    public boolean isPrepared() {
+        return handler != null && handler.isPrepared();
+    }
+
+    @Override
+    public void showFPS(boolean show){
+        mShowFps = show;
+    }
+    private static final int MAX_RECORD_SIZE = 50;
+    private static final int ONE_SECOND = 1000;
+    private LinkedList<Long> mDrawTimes;
+
+    private boolean mClearFlag;
+    private float fps() {
+        long lastTime = System.currentTimeMillis();
+        mDrawTimes.addLast(lastTime);
+        float dtime = lastTime - mDrawTimes.getFirst();
+        int frames = mDrawTimes.size();
+        if (frames > MAX_RECORD_SIZE) {
+            mDrawTimes.removeFirst();
+        }
+        return dtime > 0 ? mDrawTimes.size() * ONE_SECOND / dtime : 0.0f;
+    }
+    @Override
+    public long drawDanmakus() {
+        if (!isSurfaceCreated)
+            return 0;
+        if (!isShown())
+            return -1;
+        long stime = System.currentTimeMillis();
+        lockCanvas();
+        return System.currentTimeMillis() - stime;
+    }
+    
+    @SuppressLint("NewApi")
+    private void postInvalidateCompat() {
+        mRequestRender = true;
+        // 必须走 postInvalidateOnAnimation：
+        // - postInvalidateOnAnimation 经 ViewRootImpl → Choreographer.postCallback，
+        //   在更新线程调用时就会立刻请求 VSYNC，请求频率 = 更新线程帧率（约 16ms 一次），
+        //   vsync 流水线始终处于热态，每帧 16ms 内完成。
+        // - postInvalidate 只向主线程队列投递一条同步消息，VSYNC 要等主线程处理该消息、
+        //   执行 scheduleTraversals 时才首次请求；在部分 ROM（如实测 I9508V, 5.0.1 ART）
+        //   上这种"每帧现请求"的应答延迟高达 ~600ms，期间同步栅栏常驻，主线程所有消息
+        //   （invalidate/探测/播放器进度 Handler/MediaSession）全部被压住，实测
+        //   lockWait/mainThreadProbe 恒为 600-700ms，整个 UI 掉到 ~1.5fps。
+        //   （"post 探测消息队列响应 <20ms" 是在无栅栏状态下测的，不能反映此场景。）
+        // API<16 没有 postInvalidateOnAnimation，只能 postInvalidate。
+        if (getSdkInt() >= 16) {
+            master.flame.danmaku.util.DanmakuCompat.V16.postInvalidateOnAnimation(this);
+        } else {
+            this.postInvalidate();
+        }
+    }
+
+    private void lockCanvas() {
+        if(mDanmakuVisible == false) {
+            return;
+        }
+        long tStart = System.currentTimeMillis();
+        postInvalidateCompat();
+        // 诊断：探测主线程空闲度——post 一个任务到主线程，看它多久被调度执行
+        // 若延迟巨大，说明主线程被其他工作占满（Choreographer 排不上，onDraw 被推迟）
+        final long[] probeLatency = new long[]{-1};
+        try {
+            post(new Runnable() {
+                public void run() {
+                    probeLatency[0] = System.currentTimeMillis();
+                }
+            });
+        } catch (Throwable t) {
+        }
+        int waitRounds = 0;
+        synchronized (mDrawMonitor) {
+            while ((!mDrawFinished) && (handler != null)) {
+                try {
+                    mDrawMonitor.wait(200);
+                    waitRounds++;
+                    if (waitRounds == 1 || waitRounds % 2 == 0) {
+                        // 等待超过 200ms 仍未完成：主线程 onDraw 被延迟，记录
+                        long probeLag = probeLatency[0] > 0 ? probeLatency[0] - tStart : -1;
+                        master.flame.danmaku.util.DiagLogger.diag("Danmaku",
+                                "lockWait round=" + waitRounds
+                                        + " elapsed=" + (System.currentTimeMillis() - tStart)
+                                        + "ms mRequestRender=" + mRequestRender
+                                        + " visible=" + mDanmakuVisible
+                                        + " mainThreadProbe=" + probeLag + "ms");
+                        // 主线程 probe 严重延迟时，dump 主线程调用栈定位阻塞点
+                        if (waitRounds >= 2 && probeLag > 300) {
+                            dumpMainThreadStack();
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    if (mDanmakuVisible == false || handler == null || handler.isStop()) {
+                        break;
+                    } else {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            mDrawFinished = false;
+        }
+    }
+
+    private void dumpMainThreadStack() {
+        try {
+            android.os.Looper mainLooper = android.os.Looper.getMainLooper();
+            if (mainLooper == null) return;
+            java.lang.Thread mainThread = null;
+            try {
+                java.lang.reflect.Method gt = android.os.Looper.class.getMethod("getThread");
+                mainThread = (java.lang.Thread) gt.invoke(mainLooper);
+            } catch (Throwable t) {
+                mainThread = null;
+            }
+            if (mainThread == null) return;
+            java.lang.StackTraceElement[] st = mainThread.getStackTrace();
+            if (st == null) return;
+            StringBuilder sb = new StringBuilder();
+            sb.append("MAIN_STACK thread=").append(mainThread.getName()).append(":\n");
+            for (int i = 0; i < st.length && i < 20; i++) {
+                sb.append("  at ").append(st[i].getClassName())
+                        .append(".").append(st[i].getMethodName())
+                        .append("(").append(st[i].getFileName())
+                        .append(":").append(st[i].getLineNumber()).append(")\n");
+            }
+            master.flame.danmaku.util.DiagLogger.diag("Danmaku", sb.toString());
+        } catch (Throwable t) {
+        }
+    }
+    
+    private void lockCanvasAndClear() {
+        mClearFlag = true;
+        lockCanvas();
+    }
+    
+    private void unlockCanvasAndPost() {
+        synchronized (mDrawMonitor) {
+            mDrawFinished = true;
+            mDrawMonitor.notifyAll();
+        }
+    }
+    
+    @Override
+    protected void onDraw(Canvas canvas) {
+        long tStart = System.currentTimeMillis();
+        if ((!mDanmakuVisible) && (!mRequestRender)) {
+            super.onDraw(canvas);
+            return;
+        }
+        if (mClearFlag) {
+            DrawHelper.clearCanvas(canvas);
+            mClearFlag = false;
+        } else {
+            if (handler != null) {
+                RenderingState rs = handler.draw(canvas);
+                if (mShowFps) {
+                    if (mDrawTimes == null)
+                        mDrawTimes = new LinkedList<Long>();
+                    String fps = String.format(Locale.getDefault(),
+                            "fps %.2f,time:%d s,cache:%d,miss:%d", fps(), getCurrentTime() / 1000,
+                            rs.cacheHitCount, rs.cacheMissCount);
+                    DrawHelper.drawFPS(canvas, fps);
+                }
+            }
+        }
+        mRequestRender = false;
+        unlockCanvasAndPost();
+        // onDraw 自身耗时诊断：区分"调度延迟"与"绘制耗时"
+        long tDraw = System.currentTimeMillis() - tStart;
+        if (tDraw > 100) {
+            master.flame.danmaku.util.DiagLogger.diag("Danmaku",
+                    "onDrawCost=" + tDraw + "ms visible=" + mDanmakuVisible
+                            + " requestRender=" + mRequestRender);
+        }
+    }
+    
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (handler != null) {
+            handler.notifyDispSizeChanged(right - left, bottom - top);
+        }
+        isSurfaceCreated = true;
+    }
+
+    public void toggle() {
+        if (isSurfaceCreated) {
+            if (handler == null)
+                start();
+            else if (handler.isStop()) {
+                resume();
+            } else
+                pause();
+        }
+    }
+
+    @Override
+    public void pause() {
+        if (handler != null)
+            handler.pause();
+    }
+
+    @Override
+    public void resume() {
+        if (handler != null && handler.isPrepared())
+            handler.resume();
+        else if (handler == null) {
+            restart();
+        }
+    }
+    
+    @Override
+    public boolean isPaused() {
+        if(handler != null) {
+            return handler.isStop();
+        }
+        return false;
+    }
+
+    public void restart() {
+        stop();
+        start();
+    }
+
+    @Override
+    public void start() {
+        start(0);
+    }
+
+    @Override
+    public void start(long postion) {
+        if (handler == null) {
+            prepare();
+        }else{
+            handler.removeCallbacksAndMessages(null);
+        }
+        handler.obtainMessage(DrawHandler.START, postion).sendToTarget();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (null != mTouchHelper) {
+            mTouchHelper.onTouchEvent(event);
+        }
+
+        return super.onTouchEvent(event);
+    }
+
+    public void seekTo(Long ms) {
+        if(handler != null){
+            handler.seekTo(ms);
+        }
+    }
+
+
+    public void enableDanmakuDrawingCache(boolean enable) {
+        mEnableDanmakuDrwaingCache = enable;
+    }
+
+    @Override
+    public boolean isDanmakuDrawingCacheEnabled() {
+        return mEnableDanmakuDrwaingCache;
+    }
+
+    @Override
+    public boolean isViewReady() {
+        return isSurfaceCreated;
+    }
+
+    @Override
+    public View getView() {
+        return this;
+    }
+      
+    @Override
+    public void show() {
+        showAndResumeDrawTask(null);
+    }
+    
+    @Override
+    public void showAndResumeDrawTask(Long position) {
+        mDanmakuVisible = true;
+        mClearFlag = false;
+        if (handler == null) {
+            return;
+        }
+        handler.showDanmakus(position);
+    }
+
+    @Override
+    public void hide() {
+        mDanmakuVisible = false;
+        if (handler == null) {
+            return;
+        }
+        handler.hideDanmakus(false);
+    }
+    
+    @Override
+    public long hideAndPauseDrawTask() {
+        mDanmakuVisible = false;
+        if (handler == null) {
+            return 0;
+        }
+        return handler.hideDanmakus(true);
+    }
+
+    @Override
+    public void clear() {
+        if (!isViewReady()) {
+            return;
+        }
+        if (!mDanmakuVisible || Thread.currentThread().getId() == mUiThreadId) {
+            mClearFlag = true;
+            postInvalidateCompat();
+        } else {
+            lockCanvasAndClear();
+        }
+    }
+
+    @Override
+    public boolean isShown() {
+        return mDanmakuVisible && super.isShown();
+    }
+
+    @Override
+    public void setDrawingThreadType(int type) {
+        mDrawingThreadType  = type;
+    }
+
+    @Override
+    public long getCurrentTime() {
+        if (handler != null) {
+            return handler.getCurrentTime();
+        }
+        return 0;
+    }
+
+    @Override
+    @SuppressLint("NewApi")
+    public boolean isHardwareAccelerated() {
+        if (getSdkInt() < 11) {
+            return false;
+        }
+        try {
+            java.lang.reflect.Field attachField = android.view.View.class.getDeclaredField("mAttachInfo");
+            attachField.setAccessible(true);
+            Object attachInfo = attachField.get(this);
+            if (attachInfo != null) {
+                java.lang.reflect.Field hwField =
+                        attachInfo.getClass().getDeclaredField("mHardwareAccelerated");
+                hwField.setAccessible(true);
+                return hwField.getBoolean(attachInfo);
+            }
+        } catch (Throwable t) {
+        }
+        // if 个别 ROM 改了 AttachInfo 字段名时，向上找到未重写该方法的装饰根代查。
+        // （mHardwareAccelerated 是窗口级标志，任意挂在同一窗口的非 DanmakuView 结果一致。）
+        try {
+            android.view.View p = (android.view.View) getParent();
+            android.view.View root = null;
+            while (p != null) {
+                root = p;
+                p = p.getParent() instanceof android.view.ViewGroup
+                        ? (android.view.View) ((android.view.ViewGroup) p.getParent()) : null;
+            }
+            if (root != null) {
+                java.lang.reflect.Method m = android.view.View.class.getMethod("isHardwareAccelerated");
+                return ((Boolean) m.invoke(root)).booleanValue();
+            }
+        } catch (Throwable t) {
+        }
+        return false;
+    }
+
+    @Override
+    public void clearDanmakusOnScreen() {
+        if (handler != null) {
+            handler.clearDanmakusOnScreen();
+        }
+    }
+
+    @Override
+    public void clearCache() {
+        if (handler != null) {
+            handler.clearCache();
+        }
+    }
+
+    @Override
+    public void setOnDanmakuClickListener(OnDanmakuClickListener listener) {
+        mOnDanmakuClickListener = listener;
+        setClickable(null != listener);
+    }
+
+    @Override
+    public OnDanmakuClickListener getOnDanmakuClickListener() {
+        return mOnDanmakuClickListener;
+    }
+
+}

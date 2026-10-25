@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 设置页：各个接口/播放/下载的开关都在这里 -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="通用">
+        <ListPreference
+            android:key="set_home_default"
+            android:title="首页默认页"
+            android:summary="未登录时首页显示的内容"
+            android:entries="@array/home_default_entries"
+            android:entryValues="@array/home_default_values"
+            android:defaultValue="popular" />
+        <ListPreference
+            android:key="set_recommend_source"
+            android:title="推荐源"
+            android:summary="登录后首页推荐使用的接口"
+            android:entries="@array/recommend_source_entries"
+            android:entryValues="@array/recommend_source_values"
+            android:defaultValue="rcmd" />
+        <CheckBoxPreference
+            android:key="set_home_live"
+            android:title="显示直播入口"
+            android:summary="首页顶部是否显示直播栏"
+            android:defaultValue="true" />
+        <ListPreference
+            android:key="set_image_quality"
+            android:title="图片质量"
+            android:summary="老设备建议标清，省流量省内存"
+            android:entries="@array/image_quality_entries"
+            android:entryValues="@array/image_quality_values"
+            android:defaultValue="true" />
+        <ListPreference
+            android:key="set_comment_sort"
+            android:title="评论排序"
+            android:summary="评论列表默认排列方式"
+            android:entries="@array/comment_sort_entries"
+            android:entryValues="@array/comment_sort_values"
+            android:defaultValue="3" />
+        <CheckBoxPreference
+            android:key="set_incognito"
+            android:title="无痕模式"
+            android:summary="开启后请求不携带登录信息"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="set_low_image"
+            android:title="无图模式"
+            android:summary="列表只显示小图/不显示大图，省流量省内存"
+            android:defaultValue="false" />
+        <Preference
+            android:key="clear_cache"
+            android:title="清除缓存"
+            android:summary="清理图片缓存、弹幕缓存和临时文件" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="播放设置">
+        <Preference
+            android:key="decoder_settings"
+            android:title="解码设置"
+            android:summary="软件解码 / 硬件解码等播放参数" />
+        <Preference
+            android:key="danmaku_settings"
+            android:title="弹幕设置"
+            android:summary="弹幕开关 / 字号 / 透明度 / 行数等" />
+        <ListPreference
+            android:key="set_stream_format"
+            android:title="播放流格式"
+            android:summary="DASH：高清晰度全档（480P~2K）；MP4：单流最稳（360P/720P）"
+            android:entries="@array/stream_format_entries"
+            android:entryValues="@array/stream_format_values"
+            android:defaultValue="dash" />
+        <ListPreference
+            android:key="set_default_quality"
+            android:title="默认清晰度"
+            android:entries="@array/quality_entries"
+            android:entryValues="@array/quality_values"
+            android:defaultValue="64" />
+        <CheckBoxPreference
+            android:key="set_danmaku_default"
+            android:title="默认开启弹幕"
+            android:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="下载设置">
+        <Preference
+            android:key="set_download_dir"
+            android:title="下载目录"
+            android:summary="默认下载到系统“下载”文件夹" />
+        <CheckBoxPreference
+            android:key="set_download_cover"
+            android:title="下载时保存封面"
+            android:defaultValue="false" />
+        <ListPreference
+            android:key="set_download_quality"
+            android:title="下载默认清晰度"
+            android:entries="@array/quality_entries"
+            android:entryValues="@array/quality_values"
+            android:defaultValue="16" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="账号">
+        <Preference
+            android:key="login_logout"
+            android:title="登录 / 退出登录" />
+        <Preference
+            android:key="export_cookies"
+            android:title="导出Cookies"
+            android:summary="导出后会自动清除登录状态" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="关于">
+        <Preference
+            android:key="check_update"
+            android:title="检查更新"
+            android:summary="跳转到官网下载最新版本" />
+        <Preference
+            android:key="device_info"
+            android:title="设备信息检测" />
+        <Preference
+            android:key="crash_log"
+            android:title="崩溃日志收集"
+            android:summary="导出崩溃日志TXT到下载文件夹" />
+        <Preference
+            android:key="compat"
+            android:title="兼容性列表"
+            android:summary="查看各架构/系统版本/清晰度支持情况" />
+        <Preference
+            android:key="eula"
+            android:title="利用规约" />
+        <Preference
+            android:key="about"
+            android:title="关于" />
+        <Preference
+            android:key="version"
+            android:title="版本"
+            android:summary="OldBiliRetro" />
+    </PreferenceCategory>
+</PreferenceScreen>

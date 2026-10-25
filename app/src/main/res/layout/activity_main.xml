@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 页面内容区（四个页签轮换） -->
+    <FrameLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- 底部页签栏：首页/动态/消息/我的（2013 样式：深底+分隔线+实心图标） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/tabbar_height"
+        android:orientation="horizontal"
+        android:background="@drawable/tab_bar_bg">
+
+        <LinearLayout
+            android:id="@+id/tab_home"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/tab_home_icon"
+                android:layout_width="@dimen/tab_icon"
+                android:layout_height="@dimen/tab_icon"
+                android:src="@drawable/tab_home" />
+
+            <TextView
+                android:id="@+id/tab_home_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tab_home"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tab_dynamic"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/tab_dynamic_icon"
+                android:layout_width="@dimen/tab_icon"
+                android:layout_height="@dimen/tab_icon"
+                android:src="@drawable/tab_dynamic" />
+
+            <TextView
+                android:id="@+id/tab_dynamic_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tab_dynamic"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tab_message"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/tab_message_icon"
+                android:layout_width="@dimen/tab_icon"
+                android:layout_height="@dimen/tab_icon"
+                android:src="@drawable/tab_message" />
+
+            <TextView
+                android:id="@+id/tab_message_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tab_message"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tab_mine"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/tab_mine_icon"
+                android:layout_width="@dimen/tab_icon"
+                android:layout_height="@dimen/tab_icon"
+                android:src="@drawable/tab_mine" />
+
+            <TextView
+                android:id="@+id/tab_mine_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tab_mine"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

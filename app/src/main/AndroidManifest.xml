@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.android.oldbili.retro"
+    android:installLocation="auto"
+    android:versionCode="1"
+    android:versionName="1.0.0">
+
+    <!-- 基础权限：联网、状态、震动 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- 下载到公共"下载"目录；安卓6+运行时申请，安卓13+改走系统文件夹授权 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- 后台下载服务（安卓8+通知渠道 / 前台服务标记） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <application
+        android:name=".OldBiliApp"
+        android:allowBackup="true"
+        android:hardwareAccelerated="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:theme="@style/AppTheme">
+
+        <!-- 开屏：首次安装做 UI 大小设置、同意利用规约 -->
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 主界面：首页/动态/消息/我的 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait" />
+
+        <!-- 搜索 -->
+        <activity
+            android:name=".SearchActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden|adjustPan" />
+
+        <!-- 视频详情（简介/分P/评论/相关视频）；同时承接 B 站分享链接直达 -->
+        <activity
+            android:name=".VideoDetailActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="bilibili.com" />
+                <data android:host="www.bilibili.com" />
+                <data android:host="m.bilibili.com" />
+                <data android:host="b23.tv" />
+                <data android:host="bili2233.cn" />
+            </intent-filter>
+        </activity>
+
+        <!-- 视频/直播播放（内置 IJK）：固定横屏，不参与横竖屏切换 -->
+        <activity
+            android:name=".PlayerActivity"
+            android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="landscape"
+            android:theme="@style/PlayerTheme" />
+
+        <!-- 登录（扫码 / Cookie 导入导出） -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- 个人空间（自己或 UP 主） -->
+        <activity
+            android:name=".UserActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- 消息 -->
+        <activity
+            android:name=".MessageListActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".MessageActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+
+        <!-- 收藏夹 -->
+        <activity
+            android:name=".FavoriteFolderActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".FavoriteListActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- 历史 / 稍后再看 / 关注列表 / 动态 -->
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".SpaceListActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".WatchLaterActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".FollowListActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".DynamicActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- 下载管理 -->
+        <activity
+            android:name=".DownloadActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- 直播间 -->
+        <activity
+            android:name=".LiveRoomActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- 评论（视频/动态共用） -->
+        <activity
+            android:name=".CommentListActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+
+        <!-- 动态详情（动态评论区） -->
+        <activity
+            android:name=".DynamicDetailActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+
+        <!-- 设置 -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".DecoderSettingsActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".DanmakuSettingsActivity"
+            android:exported="true"
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".BangumiListActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".BangumiDetailActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- 关于 / 彩蛋 / 规约 / 设备信息 -->
+        <activity
+            android:name=".AboutActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".EggActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".EulaActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".CompatActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".DeviceInfoActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- 视频下载后台服务 -->
+        <service
+            android:name=".download.DownloadService"
+            android:exported="false" />
+
+        <!-- 本地流代理：给不能带 Referer 的第三方播放器用 -->
+        <service
+            android:name=".net.ProxyStreamService"
+            android:exported="false" />
+    </application>
+</manifest>

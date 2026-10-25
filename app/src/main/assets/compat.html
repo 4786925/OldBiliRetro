@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OldBiliRetro 兼容性列表</title>
+<style type="text/css">
+body { background:#101010; color:#dddddd; font-size:14px; line-height:1.6; margin:10px; }
+h2 { color:#33b5e5; font-size:17px; border-bottom:1px solid #333; padding-bottom:4px; margin-top:22px; }
+h3 { color:#33b5e5; font-size:15px; margin-top:18px; }
+table { border-collapse:collapse; width:100%; margin:8px 0; font-size:13px; }
+th { background:#1d1d1d; color:#33b5e5; text-align:left; padding:6px; border:1px solid #333; }
+td { padding:6px; border:1px solid #333; vertical-align:top; }
+.ok { color:#7ac943; }
+.no { color:#e04b4b; }
+.warn { color:#f0ad4e; }
+.note { background:#161616; border-left:3px solid #33b5e5; padding:8px 10px; margin:10px 0; color:#bbbbbb; font-size:13px; }
+.small { color:#888888; font-size:12px; }
+</style>
+</head>
+<body>
+
+<h2 align="center">OldBiliRetro 兼容性列表</h2>
+<p class="small" align="center">最后更新：2026-10 &nbsp;|&nbsp; 适用版本：1.0.0 beta 及以后</p>
+
+<div class="note">
+本页说明本应用在各 CPU 架构、各 Android 版本上的可用性，以及播放器与清晰度的支持情况。
+若你的设备不在下表范围内，仍可尝试安装，但无法保证视频解码正常。
+</div>
+
+<h2>一、系统版本总览</h2>
+<table>
+<tr><th>项目</th><th>数值</th></tr>
+<tr><td>最低编译版本（minSdk）</td><td>6（Android 2.0.1）</td></tr>
+<tr><td>实测可完整使用的最低版本</td><td class="ok">Android 2.3（API 9）</td></tr>
+<tr><td>界面风格</td><td>Holo Dark（2013 风格）</td></tr>
+<tr><td>最高支持</td><td>Android 16 / 17（API 36+）</td></tr>
+</table>
+
+<h2>二、CPU 架构兼容性</h2>
+<p class="small">应用内置 5 套独立编译的原生播放器（IJKPlayer + FFmpeg 4.0 + OpenSSL 1.0.2u + SoundTouch + libyuv），
+全部由项目自行编译，无第三方二进制。</p>
+<table>
+<tr><th>ABI 架构</th><th>最低 API</th><th>对应 Android</th><th>原生播放器</th><th>HTTPS 播放</th><th>说明</th></tr>
+<tr><td>armeabi（ARMv5）</td><td class="ok">9</td><td>2.3 ~ 2.3.7</td><td class="ok">自编译</td><td class="ok">支持</td><td>最老设备，ARMv5/ARMv6 机器</td></tr>
+<tr><td>armeabi-v7a（ARMv7）</td><td class="ok">9</td><td>2.3 ~ 4.4</td><td class="ok">自编译</td><td class="ok">支持</td><td>2011~2014 年主流手机</td></tr>
+<tr><td>arm64-v8a（ARM64）</td><td>21</td><td>5.0 ~ 17</td><td class="ok">自编译</td><td class="ok">支持</td><td>2015 年后的主流手机</td></tr>
+<tr><td>x86（32 位）</td><td class="ok">9</td><td>2.3 ~ 7.x</td><td class="ok">自编译</td><td class="ok">支持</td><td>Intel 平板 / 模拟器</td></tr>
+<tr><td>x86_64（64 位）</td><td>21</td><td>5.0 以上</td><td class="ok">自编译</td><td class="ok">支持</td><td>64 位模拟器 / Chromebook</td></tr>
+</table>
+<p class="small">注：ARM64 与 x86_64 的 API 下限由架构本身决定（Google 从未提供更低 API 的 64 位 NDK 平台）。</p>
+
+<h2>三、播放器与技术栈</h2>
+<table>
+<tr><th>组件</th><th>版本 / 实现</th><th>最低要求</th></tr>
+<tr><td>主播放器</td><td>IJKPlayer（FFmpeg 4.0，ff4.0--ijk0.8.8 分支）</td><td>Android 2.3</td></tr>
+<tr><td>TLS / HTTPS</td><td>OpenSSL 1.0.2u（静态链入）</td><td>Android 2.3</td></tr>
+<tr><td>倍速播放</td><td>SoundTouch（ijk-r0.1.2）</td><td>Android 2.3</td></tr>
+<tr><td>色彩转换</td><td>libyuv（ijk-r0.2.1）</td><td>Android 2.3</td></tr>
+<tr><td>弹幕引擎</td><td>DanmakuFlameMaster</td><td>2.3（SurfaceView）／4.0+（TextureView）</td></tr>
+<tr><td>DASH 音画分离</td><td>IJK 播视频 + 系统 MediaPlayer 播音频</td><td>Android 4.0（API 14，支持请求头）</td></tr>
+</table>
+
+<h2>四、清晰度兼容性</h2>
+<table>
+<tr><th>清晰度</th><th>可用性</th><th>条件 / 说明</th></tr>
+<tr><td>360P</td><td class="ok">全平台可用</td><td>单流，任何架构均可播放</td></tr>
+<tr><td>480P</td><td class="no">已下架</td><td>B 站服务端已不再提供 32 档，选择后会被自动降到 360P</td></tr>
+<tr><td>720P</td><td class="ok">全平台可用</td><td>单流</td></tr>
+<tr><td>1080P</td><td class="ok">大多数视频可用</td><td>单流；部分内容需要登录或大会员</td></tr>
+<tr><td>1080P 60 帧</td><td class="warn">部分视频</td><td>需 DASH 模式；Android 2.x 隐藏此档</td></tr>
+<tr><td>2K</td><td class="warn">少数视频</td><td>需 DASH 模式 + 大会员；Android 2.x 隐藏此档</td></tr>
+</table>
+<div class="note">
+清晰度列表是<b>动态</b>的：应用会按服务端实际返回的可选档位显示，
+所以不同视频看到的档位可能不同（例如只有 360P/720P）。
+</div>
+
+<h2>五、功能兼容性</h2>
+<table>
+<tr><th>功能</th><th>2.3（API 9）</th><th>4.0+（API 14+）</th></tr>
+<tr><td>视频播放（360P/720P/1080P）</td><td class="ok">支持</td><td class="ok">支持</td></tr>
+<tr><td>弹幕显示 / 发送</td><td class="ok">支持（SurfaceView）</td><td class="ok">支持（TextureView，60fps）</td></tr>
+<tr><td>弹幕设置（横屏）</td><td class="ok">支持</td><td class="ok">支持</td></tr>
+<tr><td>倍速（0.75x~2.0x / 长按 2x）</td><td class="ok">支持</td><td class="ok">支持</td></tr>
+<tr><td>点赞 / 投币 / 收藏 / 分享</td><td class="ok">支持</td><td class="ok">支持</td></tr>
+<tr><td>视频下载</td><td class="ok">支持</td><td class="ok">支持</td></tr>
+<tr><td>番剧 / 直播</td><td class="ok">支持</td><td class="ok">支持</td></tr>
+<tr><td>无图模式 / 无痕模式</td><td class="ok">支持</td><td class="ok">支持</td></tr>
+</table>
+
+<h2>六、已知限制</h2>
+<table>
+<tr><th>现象</th><th>原因</th></tr>
+<tr><td>没有 480P 选项</td><td>B 站已下架 32 档，所有设备（含官方 App）同样没有</td></tr>
+<tr><td>Android 2.x 看不到 1080P60 / 2K</td><td>老系统不支持 DASH 音画分离所需的播放能力，应用主动隐藏</td></tr>
+<tr><td>部分网络下无法播放</td><td>B 站 CDN 对出口 IP 做风控（HTTP 403），与设备无关，换网络即可</td></tr>
+<tr><td>2.3 打开内嵌网页较慢</td><td>系统 WebView 版本过旧，属正常现象</td></tr>
+</table>
+
+<h2>七、推荐测试顺序</h2>
+<p>1. 先播一个普通视频，确认能出画面、有声音；<br>
+2. 打开清晰度菜单，确认列表与本文档一致；<br>
+3. 发送一条弹幕，确认能上屏；<br>
+4. 长按画面，确认切换到 2 倍速；<br>
+5. 进设置 → 兼容性列表，对照本页检查设备信息。</p>
+
+<p class="small" align="center">OldBiliRetro · 爱好者开发，与哔哩哔哩官方无关</p>
+</body>
+</html>

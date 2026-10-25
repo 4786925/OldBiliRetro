@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 选择对话框列表行：白字深底，老设备上不再出现黑字看不清 -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="44dp"
+    android:gravity="center_vertical"
+    android:paddingLeft="14dp"
+    android:paddingRight="14dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
+    android:textColor="#ffd9d9d9"
+    android:textSize="15sp"
+    android:singleLine="true"
+    android:ellipsize="end" />

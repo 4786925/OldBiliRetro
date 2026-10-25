@@ -1,0 +1,111 @@
+apply plugin: 'com.android.application'
+
+// OldBiliRetro —— 老版哔哩
+// 工具链：AGP 2.3.2 + Gradle 3.3 + JDK7 编译（与哔哩终端/哔哩经典一致），
+// 依赖：2013-2014 年的 support-v4 19.1.0（已按当年惯例源码 vendor 进工程），
+// 其余第三方（IJK Player、DanmakuFlameMaster、RecyclerView/CardView 21.0.0、SwetakeQRCode）同。
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion '25.0.3'
+
+    defaultConfig {
+        applicationId "com.android.oldbili.retro"
+        minSdkVersion 6          // Android 2.0.1，安卓 2 以上全部兼容
+        targetSdkVersion 26      // Android 16 亦要求目标版本 >= 24，26 保安装
+        versionCode 1
+        versionName "1.0.0 beta"
+
+        // IJK 官方原版库覆盖的 ABI：ARMv5/v7/v8 + x86 + x86_64（MIPS 官方不提供，去掉）
+        ndk {
+            abiFilters 'armeabi', 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+
+    signingConfigs {
+        release {
+            def lp = rootProject.file("local.properties")
+            if (lp.exists()) {
+                def props = new Properties()
+                props.load(lp.newDataInputStream())
+                if (props.getProperty("KEY_PATH") != null) {
+                    storeFile file(props.getProperty("KEY_PATH"))
+                    storePassword props.getProperty("KEY_PASSWORD")
+                    keyAlias props.getProperty("ALIAS_NAME")
+                    keyPassword props.getProperty("ALIAS_PASSWORD")
+                }
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            // debug 也用正式签名：避免 debug keystore 漂移导致设备上旧包永远装不上新包
+            def lp = rootProject.file("local.properties")
+            if (lp.exists()) {
+                def props = new Properties()
+                props.load(lp.newDataInputStream())
+                if (props.getProperty("KEY_PATH") != null) {
+                    signingConfig signingConfigs.release
+                }
+            }
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            def lp = rootProject.file("local.properties")
+            if (lp.exists()) {
+                def props = new Properties()
+                props.load(lp.newDataInputStream())
+                if (props.getProperty("KEY_PATH") != null) {
+                    signingConfig signingConfigs.release
+                }
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    dexOptions {
+        preDexLibraries false
+        javaMaxHeapSize "1g"
+    }
+
+    packagingOptions {
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
+}
+
+dependencies {
+    // ZXing core 3.3.0（Java 7 字节码，安卓2 可用）：二维码生成
+    compile files('libs/core-3.3.0.jar')
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.incremental = false
+    // Java 7 源码交给 JDK 7 的 javac 编译（本机存在时自动启用）
+    def jdk7javac = 'C:/Program Files (x86)/Java/jdk1.7.0_80/bin/javac.exe'
+    if (file(jdk7javac).exists()) {
+        options.fork = true
+        options.forkOptions.executable = jdk7javac
+    }
+}

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 评论区独立页（老版B站就是单独一页），复用共用列表布局 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 排序切换：热门 / 最新（标题栏同步显示当前排序） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:background="#161616">
+
+        <TextView
+            android:id="@+id/sort_hot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="热门"
+            android:textSize="13sp"
+            android:clickable="true" />
+
+        <TextView
+            android:id="@+id/sort_new"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="最新"
+            android:textSize="13sp"
+            android:clickable="true" />
+    </LinearLayout>
+
+    <include
+        android:id="@+id/comment_list_root"
+        layout="@layout/widget_list_page"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:background="#111111">
+
+        <Button
+            android:id="@+id/btn_picture"
+            style="@style/RetroButton.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="图" />
+
+        <EditText
+            android:id="@+id/comment_input"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginLeft="6dp"
+            android:background="#2a2a2a"
+            android:hint="发一条友善的评论"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_tertiary"
+            android:textSize="13sp"
+            android:paddingLeft="8dp"
+            android:singleLine="true" />
+
+        <Button
+            android:id="@+id/btn_send"
+            style="@style/RetroButton.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginLeft="6dp"
+            android:text="发送" />
+    </LinearLayout>
+</LinearLayout>

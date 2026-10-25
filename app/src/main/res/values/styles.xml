@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 安卓2.x 时代：黑色窗口 + 自定义标题栏（BaseActivity 里处理） -->
+    <style name="AppTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/window_bg</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:listViewStyle">@style/RetroListView</item>
+    </style>
+
+    <!-- 开屏用，无标题全屏 -->
+    <style name="AppTheme.NoActionBar" parent="AppTheme">
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <style name="PlayerTheme" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+        <item name="android:windowBackground">@color/window_bg</item>
+    </style>
+
+    <!-- 列表样式：纯黑底、细分隔线 -->
+    <style name="RetroListView" parent="@android:style/Widget.ListView">
+        <item name="android:background">@color/page_bg</item>
+        <item name="android:divider">@color/list_divider</item>
+        <item name="android:dividerHeight">1px</item>
+        <item name="android:cacheColorHint">@color/page_bg</item>
+        <item name="android:scrollbars">vertical</item>
+        <item name="android:fadingEdge">none</item>
+        <item name="android:overScrollMode">never</item>
+    </style>
+
+    <!-- 统一风格的按钮（安卓2.x 老按钮，3.0+ 在 values-v11 里换成 Holo 蓝底） -->
+    <style name="RetroButton" parent="@android:style/Widget.Button">
+        <item name="android:background">@drawable/btn_holo_blue</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="RetroButton.Small">
+        <item name="android:minHeight">32dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:paddingRight">10dp</item>
+    </style>
+
+    <!-- 统一样式的卡片（圆角灰底，视频卡片/用户卡片都用它） -->
+    <style name="RetroCard" parent="">
+        <item name="android:background">@drawable/card_retro_bg</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <!-- 播放器小菜单条目 -->
+    <style name="PlayerMenuItem" parent="">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">@drawable/btn_transparent</item>
+        <!-- 等比缩放，避免图标被压扁 -->
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:padding">10dp</item>
+    </style>
+
+    <!-- 文本 -->
+    <style name="TextTitle">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="TextBody">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+    <style name="TextSmall">
+        <item name="android:textColor">@color/text_tertiary</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+
+    <style name="SectionText">
+        <item name="android:textColor">@color/holo_blue_light</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">4dp</item>
+    </style>
+</resources>

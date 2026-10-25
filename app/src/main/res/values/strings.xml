@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OldBiliRetro</string>
+
+    <!-- 开屏 -->
+    <string name="splash_loading">正在初始化…</string>
+    <string name="splash_welcome">欢迎使用 OldBiliRetro</string>
+    <string name="ui_scale_title">界面大小设置</string>
+    <string name="ui_scale_desc">拖动滑块调整界面大小，让手机、平板、手表都能正常显示</string>
+    <string name="ui_scale_small">小</string>
+    <string name="ui_scale_mid">中</string>
+    <string name="ui_scale_big">大</string>
+    <string name="ui_scale_done">完成</string>
+    <string name="eula_agree">同意</string>
+    <string name="eula_disagree">不同意并退出</string>
+
+    <!-- 主界面 -->
+    <string name="tab_home">首页</string>
+    <string name="tab_dynamic">动态</string>
+    <string name="tab_message">消息</string>
+    <string name="tab_mine">我的</string>
+    <string name="tab_search">搜索</string>
+    <string name="home_recommend">推荐</string>
+    <string name="home_popular">热门</string>
+    <string name="home_live">直播</string>
+
+    <!-- 通用 -->
+    <string name="loading">加载中…</string>
+    <string name="load_failed">加载失败</string>
+    <string name="click_retry">点击重试</string>
+    <string name="empty">这里空空如也</string>
+    <string name="load_more">加载更多</string>
+    <string name="no_more">没有更多了</string>
+    <string name="pull_refresh">下拉刷新</string>
+    <string name="pull_refresh_release">松开立即刷新</string>
+    <string name="pull_refreshing">正在刷新…</string>
+    <string name="back">返回</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
+    <string name="share">分享</string>
+    <string name="download">下载</string>
+    <string name="play">播放</string>
+    <string name="search_hint">搜索视频 / AV号 / BV号</string>
+    <string name="net_error">网络不给力，请检查网络连接</string>
+    <string name="not_login">未登录</string>
+    <string name="need_login">需要登录后才能使用此功能</string>
+    <string name="refresh">刷新</string>
+
+    <!-- 搜索 -->
+    <string name="search_history">搜索历史</string>
+    <string name="clear_history">清除搜索记录</string>
+    <string name="search_video">视频</string>
+    <string name="search_user">用户</string>
+
+    <!-- 视频详情 -->
+    <string name="video_parts">选集 (共%d段)</string>
+    <string name="video_collection">合集 (共%d段视频)</string>
+    <string name="video_comments">评论</string>
+    <string name="comment_sort_hot_title">热门评论</string>
+    <string name="comment_sort_new_title">最新评论</string>
+    <string name="video_related">相关推荐</string>
+    <string name="video_intro">简介</string>
+    <string name="video_like">点赞</string>
+    <string name="video_coin">投币</string>
+    <string name="video_fav">收藏</string>
+    <string name="video_watchlater_add">稍后再看</string>
+    <string name="link_copied">视频链接已复制到剪贴板</string>
+    <string name="video_download">下载视频</string>
+
+    <!-- 播放器 -->
+    <string name="player_loading">视频加载中…</string>
+    <string name="player_error">视频播放失败</string>
+    <string name="player_use_external">是否用手机上的播放器播放？</string>
+    <string name="player_exit_tip">再按一次退出视频</string>
+    <string name="player_quality">清晰度</string>
+    <string name="player_danmaku_on">弹幕：开</string>
+    <string name="player_danmaku_off">弹幕：关</string>
+    <string name="player_rotate">横竖屏</string>
+    <string name="player_auto_rotate">自动横竖屏</string>
+    <string name="player_parts">选集</string>
+    <string name="player_send_danmaku">发条弹幕吧</string>
+    <string name="player_danmaku_sent">弹幕已发送</string>
+    <string name="player_liked">已点赞</string>
+    <string name="player_like_failed">点赞失败</string>
+    <string name="player_coined">投币成功</string>
+    <string name="player_coin_failed">投币失败</string>
+    <string name="player_followed">已关注</string>
+    <string name="player_follow_failed">关注失败</string>
+    <string name="player_brightness">亮度</string>
+    <string name="player_volume">音量</string>
+    <string name="player_seek_to">%1$s / %2$s</string>
+    <string name="player_quality_changed">已切换清晰度</string>
+    <string name="player_open_failed">没有找到可用的视频播放器</string>
+
+    <!-- 登录 -->
+    <string name="login_title">登录哔哩哔哩</string>
+    <string name="login_qr_hint">请使用哔哩哔哩手机客户端扫码登录</string>
+    <string name="login_qr_tip">假如扫码迟迟无反应，请用扫码软件扫描而不是B站。</string>
+    <string name="login_qr_expired">二维码已过期，点击刷新</string>
+    <string name="login_qr_scanned">已扫码，请在手机上确认</string>
+    <string name="login_ok">登录成功</string>
+    <string name="login_failed">登录失败</string>
+    <string name="login_refresh">刷新二维码</string>
+    <string name="cookie_import">Cookie 导入</string>
+    <string name="cookie_export">Cookie 导出</string>
+    <string name="cookie_import_hint">粘贴完整 Cookie（含 SESSDATA 与 bili_jct）</string>
+    <string name="cookie_import_ok">Cookie 已导入</string>
+    <string name="cookie_import_failed">Cookie 无效，导入失败</string>
+    <string name="cookie_copied">Cookie 已复制到剪贴板</string>
+    <string name="cookie_export_hint">登录 Cookie 已复制，请妥善保管，不要泄露给他人</string>
+    <string name="logout">退出登录</string>
+    <string name="logout_ok">已退出登录</string>
+
+    <!-- 个人空间 -->
+    <string name="space_videos">视频</string>
+    <string name="space_dynamic">动态</string>
+    <string name="space_intro">简介</string>
+    <string name="follow">关注</string>
+    <string name="followed_btn">已关注</string>
+    <string name="follow_each">已互粉</string>
+    <string name="unfollow">取消关注</string>
+    <string name="send_msg">私信</string>
+    <string name="fans">粉丝</string>
+    <string name="following">关注</string>
+    <string name="follow_ok">关注成功</string>
+    <string name="unfollow_ok">已取消关注</string>
+    <string name="followed_list">关注的人</string>
+    <string name="fans_list">粉丝</string>
+
+    <!-- 消息 -->
+    <string name="message_list">消息</string>
+    <string name="message_reply">回复</string>
+    <string name="message_send_hint">输入消息…</string>
+    <string name="message_sent">发送成功</string>
+    <string name="message_send_failed">发送失败</string>
+    <string name="message_unread">未读</string>
+
+    <!-- 收藏 -->
+    <string name="favorite_folders">收藏夹</string>
+    <string name="favorite_new">新建收藏夹</string>
+    <string name="favorite_new_hint">收藏夹名称</string>
+    <string name="favorite_new_ok">收藏夹已创建</string>
+    <string name="favorite_add_ok">已收藏</string>
+    <string name="favorite_add_failed">收藏失败</string>
+    <string name="favorite_del_ok">已取消收藏</string>
+    <string name="favorite_none">未登录无收藏夹</string>
+    <string name="favorite_empty">这个收藏夹还没有内容</string>
+
+    <!-- 历史 / 稍后再看 -->
+    <string name="history_title">播放历史</string>
+    <string name="watchlater_title">稍后再看</string>
+    <string name="watchlater_add_ok">已加入稍后再看</string>
+    <string name="history_clear">清空历史</string>
+
+    <!-- 动态 -->
+    <string name="dynamic_title">动态</string>
+    <string name="dynamic_comment">评论</string>
+    <string name="dynamic_like">点赞</string>
+    <string name="dynamic_send_hint">说点什么…</string>
+    <string name="dynamic_send_ok">评论已发送</string>
+    <string name="dynamic_send_fail">可能是图片发送失败或不是大会员</string>
+
+    <!-- 下载 -->
+    <string name="download_title">下载管理</string>
+    <string name="download_quality">选择清晰度</string>
+    <string name="download_save_cover">同时保存视频封面</string>
+    <string name="download_cover_quality">封面清晰度</string>
+    <string name="cover_low">低</string>
+    <string name="cover_mid">中</string>
+    <string name="cover_high">高</string>
+    <string name="download_started">已开始下载</string>
+    <string name="download_waiting">等待中</string>
+    <string name="download_downloading">下载中</string>
+    <string name="download_paused">已暂停</string>
+    <string name="download_done">已完成</string>
+    <string name="download_failed">下载失败</string>
+    <string name="download_pause">暂停</string>
+    <string name="download_resume">继续</string>
+    <string name="download_delete">删除</string>
+    <string name="download_folder_tip">请选择保存目录（安卓13+需选择系统文件夹）</string>
+    <string name="download_dir_picked">保存目录已设置为：%1$s</string>
+    <string name="download_storage_denied">存储权限被拒绝，无法下载</string>
+
+    <!-- 设置 -->
+    <string name="settings_title">设置</string>
+    <string name="settings_general">通用</string>
+    <string name="settings_player">播放设置</string>
+    <string name="settings_download">下载设置</string>
+    <string name="settings_account">账号</string>
+    <string name="settings_about">关于</string>
+    <string name="set_home_default">首页默认页</string>
+    <string name="set_home_default_desc">未登录时首页显示的内容</string>
+    <string name="set_recommend_source">推荐源</string>
+    <string name="set_recommend_source_desc">登录后首页推荐使用的接口</string>
+    <string name="set_home_live">显示直播入口</string>
+    <string name="set_home_live_desc">首页顶部是否显示直播栏</string>
+    <string name="set_danmaku_engine">弹幕引擎</string>
+    <string name="set_danmaku_engine_desc">DanmakuFlameMaster 完整版 / 关闭</string>
+    <string name="set_image_quality">图片质量</string>
+    <string name="set_image_quality_desc">老设备建议标清，省流量省内存</string>
+    <string name="set_comment_sort">评论排序</string>
+    <string name="set_comment_sort_desc">评论列表默认排列方式</string>
+    <string name="set_incognito">无痕模式</string>
+    <string name="set_incognito_desc">开启后请求不携带登录信息</string>
+    <string name="set_decoder">解码设置</string>
+    <string name="set_decoder_desc">软件解码 / 硬件解码等播放参数</string>
+    <string name="set_default_quality">默认清晰度</string>
+    <string name="set_auto_rotate">自动横竖屏</string>
+    <string name="set_auto_rotate_desc">跟随设备方向传感器自动旋转画面</string>
+    <string name="set_danmaku_default">默认开启弹幕</string>
+    <string name="set_external_player">失败时使用第三方播放器</string>
+    <string name="set_external_player_desc">内置播放器失败时调用手机已安装的播放器</string>
+    <string name="set_external_player_choice">播放器选择</string>
+    <string name="set_external_player_choice_desc">MX Player / VLC / MoboPlayer / QQ影音</string>
+    <string name="set_download_dir">下载目录</string>
+    <string name="set_download_dir_desc">默认下载到系统“下载”文件夹</string>
+    <string name="set_download_cover">下载时保存封面</string>
+    <string name="set_download_quality">下载默认清晰度</string>
+    <string name="set_login">登录 / 退出登录</string>
+    <string name="set_logout">退出登录</string>
+    <string name="set_logout_desc">清除本机保存的登录信息</string>
+    <string name="set_check_update">检查更新</string>
+    <string name="set_check_update_desc">跳转到官网下载最新版本</string>
+    <string name="set_device_info">设备信息检测</string>
+    <string name="set_crash_log">崩溃日志收集</string>
+    <string name="set_crash_log_desc">导出崩溃日志TXT到下载文件夹</string>
+    <string name="set_eula">利用规约</string>
+    <string name="compat_title">兼容性列表</string>
+    <string name="compat_open">查看兼容性列表</string>
+    <string name="set_about">关于</string>
+    <string name="set_version">版本 %1$s</string>
+    <string name="update_no_url">官网域名建设中，敬请期待</string>
+    <string name="crash_none">暂无崩溃日志</string>
+    <string name="crash_exported">崩溃日志已导出到下载文件夹</string>
+
+    <!-- 解码设置（参照哔哩终端安卓4.0修复版） -->
+    <string name="decoder_title">解码设置</string>
+    <string name="decoder_mode">解码方式</string>
+    <string name="decoder_hardware">硬件解码</string>
+    <string name="decoder_software">软件解码</string>
+    <string name="decoder_mode_desc">老设备或视频花屏时建议改软件解码</string>
+    <string name="decoder_audio">音频输出</string>
+    <string name="decoder_audio_desc">OpenSL ES 延迟低，AudioTrack 兼容好</string>
+    <string name="decoder_display">显示方式</string>
+    <string name="decoder_display_desc">TextureView 兼容好，SurfaceView 性能高</string>
+    <string name="decoder_framedrop">丢帧模式</string>
+    <string name="decoder_framedrop_desc">低配设备建议开启，保证流畅</string>
+    <string name="decoder_longclick">长按倍速</string>
+    <string name="decoder_loop">洗脑循环</string>
+    <string name="decoder_background">熄屏继续播放</string>
+    <string name="decoder_from_last">从历史位置播放</string>
+    <string name="decoder_show_online">显示实时人数</string>
+    <string name="decoder_scale">视频可缩放</string>
+    <string name="decoder_danmaku_engine">弹幕引擎（关闭后不显示弹幕）</string>
+    <string name="decoder_danmaku_overlap">弹幕允许重叠</string>
+    <string name="decoder_danmaku_merge">合并重复弹幕</string>
+    <string name="decoder_danmaku_force_scroll">强制为滚动弹幕</string>
+    <string name="decoder_danmaku_maxline">弹幕最大行数</string>
+    <string name="decoder_danmaku_size">弹幕字号大小</string>
+    <string name="decoder_danmaku_alpha">弹幕不透明度</string>
+    <string name="decoder_danmaku_speed">弹幕速度</string>
+    <string name="danmaku_settings_title">弹幕设置</string>
+    <string name="danmaku_debug_title">弹幕状态显示（屏幕右上角调试信息）</string>
+    <string name="mine_bangumi">追番</string>
+    <string name="mine_tv">追剧</string>
+
+    <!-- 关于 / 彩蛋 -->
+    <string name="about_author">作者：换季后吹来的凉风</string>
+    <string name="about_contact">联系方式：2479677176@qq.com</string>
+    <string name="about_egg_tip">连击5次有彩蛋</string>
+    <string name="about_desc">OldBiliRetro\n让古老设备也能日常使用B站。\n基于 IJK Player 与 DanmakuFlameMaster。\n本软件为第三方客户端，与哔哩哔哩无关。\n作者：换季后吹来的凉风（B站UID1061755447）</string>
+    <string name="device_info_title">设备信息检测</string>
+
+    <!-- 直播间 -->
+    <string name="live_online">%1$s 人正在看</string>
+    <string name="live_follow">已关注主播</string>
+    <string name="live_not_live">主播不在直播</string>
+
+    <!-- 分享 -->
+    <string name="share_url_fmt">https://www.bilibili.com/video/av%d</string>
+</resources>

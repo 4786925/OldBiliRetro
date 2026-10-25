@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 底部页签栏背景：深色 + 顶部 1dp 分隔线（2013 客户端样式） -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#ff141414" />
+        </shape>
+    </item>
+    <item android:top="0dp" android:gravity="top">
+        <shape android:shape="rectangle">
+            <size android:height="1dp" />
+            <solid android:color="#ff3a3a3a" />
+        </shape>
+    </item>
+</layer-list>

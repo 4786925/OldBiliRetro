@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 播放器 2013 风格 UI：顶部返回+标题+互动、底部进度条与操作按钮 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/player_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/window_bg">
+
+    <!-- 画面容器：SurfaceView / TextureView 由代码放进来 -->
+    <FrameLayout
+        android:id="@+id/surface_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 加载中 -->
+    <LinearLayout
+        android:id="@+id/loading_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/loading_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/player_loading"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- 出错提示 -->
+    <TextView
+        android:id="@+id/error_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:padding="12dp"
+        android:background="#cc000000"
+        android:text="@string/player_error"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <!-- 顶部条：返回键 + 标题 + 点赞/投币/分享 -->
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#cc0d0d0d"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_back"
+            android:background="@drawable/btn_transparent"
+            android:scaleType="centerInside" />
+
+        <TextView
+            android:id="@+id/player_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="6dp"
+            android:layout_marginRight="6dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btn_like"
+            style="@style/PlayerMenuItem"
+            android:src="@drawable/ic_like" />
+
+        <ImageButton
+            android:id="@+id/btn_coin"
+            style="@style/PlayerMenuItem"
+            android:src="@drawable/ic_coin" />
+
+        <ImageButton
+            android:id="@+id/btn_share"
+            style="@style/PlayerMenuItem"
+            android:src="@drawable/ic_share" />
+
+        <ImageButton
+            android:id="@+id/btn_follow"
+            style="@style/PlayerMenuItem"
+            android:src="@drawable/ic_follow" />
+    </LinearLayout>
+
+    <!-- 底部控制：进度条在上、操作按钮在下 -->
+    <LinearLayout
+        android:id="@+id/controller"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="#cc0d0d0d"
+        android:paddingTop="2dp"
+        android:visibility="gone">
+
+        <!-- UP 信息：昵称 · 粉丝 · 投稿数 -->
+        <TextView
+            android:id="@+id/up_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="2dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
+        <!-- 进度条（在按钮上面） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
+
+            <TextView
+                android:id="@+id/time_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:textSize="11sp" />
+
+            <SeekBar
+                android:id="@+id/progress"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="6dp"
+                android:max="1000"
+                android:progressDrawable="@drawable/player_progress" />
+        </LinearLayout>
+
+        <!-- 操作按钮：左 播放/弹幕开关/弹幕设置/发弹幕 ·· 右 倍速/清晰度 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:paddingBottom="4dp">
+
+            <ImageButton
+                android:id="@+id/btn_play"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:src="@drawable/ic_pause"
+                android:background="@drawable/btn_transparent"
+                android:scaleType="centerInside" />
+
+            <ImageButton
+                android:id="@+id/btn_danmaku"
+                style="@style/PlayerMenuItem"
+                android:src="@drawable/ic_danmaku" />
+
+            <TextView
+                android:id="@+id/btn_dm_settings"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:gravity="center"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:background="@drawable/btn_transparent"
+                android:text="弹幕设置"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/btn_send_danmaku"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:gravity="center"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:background="@drawable/btn_transparent"
+                android:text="发弹幕"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+
+            <ImageButton
+                android:id="@+id/btn_parts"
+                style="@style/PlayerMenuItem"
+                android:src="@drawable/ic_fav" />
+
+            <ImageButton
+                android:id="@+id/btn_rotate"
+                style="@style/PlayerMenuItem"
+                android:src="@drawable/ic_rotate"
+                android:visibility="gone" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/btn_speed"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:gravity="center"
+                android:minWidth="52dp"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:background="@drawable/btn_transparent"
+                android:text="1.0x"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/btn_quality"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:gravity="center"
+                android:minWidth="56dp"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:background="@drawable/btn_transparent"
+                android:text="@string/player_quality"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

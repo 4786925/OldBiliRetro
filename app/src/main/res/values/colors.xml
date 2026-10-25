@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Holo 暗色主题配色（安卓4时代标准色板） -->
+    <color name="holo_blue_light">#33b5e5</color>
+    <color name="holo_blue_dark">#0099cc</color>
+    <color name="holo_blue_bright">#00ddff</color>
+    <color name="window_bg">#000000</color>
+    <color name="page_bg">#101010</color>
+    <color name="list_divider">#33262626</color>
+    <color name="text_primary">#ffffff</color>
+    <color name="text_secondary">#b3b3b3</color>
+    <color name="text_tertiary">#7f7f7f</color>
+    <color name="bili_pink">#de698c</color>
+    <color name="overlay_bg">#cc000000</color>
+    <color name="cover_bg">#222222</color>
+    <color name="player_menu_bg">#e6000000</color>
+    <color name="progress_played">#33b5e5</color>
+    <color name="progress_rest">#33ffffff</color>
+</resources>

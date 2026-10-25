@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="home_layout_entries">
+        <item>单行大图</item>
+        <item>双行紧凑</item>
+    </string-array>
+    <string-array name="home_layout_values">
+        <item>single</item>
+        <item>double</item>
+    </string-array>
+
+    <string-array name="home_default_entries">
+        <item>热门</item>
+        <item>推荐（排行榜）</item>
+    </string-array>
+    <string-array name="home_default_values">
+        <item>popular</item>
+        <item>recommend</item>
+    </string-array>
+
+    <string-array name="recommend_source_entries">
+        <item>个性化推荐</item>
+        <item>排行榜</item>
+    </string-array>
+    <string-array name="recommend_source_values">
+        <item>rcmd</item>
+        <item>ranking</item>
+    </string-array>
+
+    <string-array name="image_quality_entries">
+        <item>高清</item>
+        <item>标清（省流量）</item>
+    </string-array>
+    <string-array name="image_quality_values">
+        <item>true</item>
+        <item>false</item>
+    </string-array>
+
+    <string-array name="comment_sort_entries">
+        <item>按热度</item>
+        <item>按时间</item>
+    </string-array>
+    <string-array name="comment_sort_values">
+        <item>3</item>
+        <item>2</item>
+    </string-array>
+
+    <string-array name="quality_entries">
+        <item>360P 流畅</item>
+        <item>480P 清晰</item>
+        <item>720P 高清</item>
+        <item>1080P 高清</item>
+        <item>1080P 60帧</item>
+        <item>2K 超清</item>
+    </string-array>
+    <string-array name="quality_values">
+        <item>16</item>
+        <item>32</item>
+        <item>64</item>
+        <item>80</item>
+        <item>116</item>
+        <item>120</item>
+    </string-array>
+
+    <!-- 老设备（安卓 2）可用的清晰度：隐藏 1080P60 和更高 -->
+    <string-array name="quality_entries_old">
+        <item>360P 流畅</item>
+        <item>480P 清晰</item>
+        <item>720P 高清</item>
+        <item>1080P 高清</item>
+    </string-array>
+    <string-array name="quality_values_old">
+        <item>16</item>
+        <item>32</item>
+        <item>64</item>
+        <item>80</item>
+    </string-array>
+
+    <string-array name="external_player_entries">
+        <item>自动选择</item>
+        <item>MX Player</item>
+        <item>VLC</item>
+        <item>MoboPlayer</item>
+        <item>QQ影音</item>
+    </string-array>
+    <string-array name="external_player_values">
+        <item>auto</item>
+        <item>mx</item>
+        <item>vlc</item>
+        <item>mobo</item>
+        <item>qq</item>
+    </string-array>
+
+    <string-array name="stream_format_entries">
+        <item>DASH（全清晰度）</item>
+        <item>MP4（单流最稳）</item>
+    </string-array>
+    <string-array name="stream_format_values">
+        <item>dash</item>
+        <item>mp4</item>
+    </string-array>
+</resources>

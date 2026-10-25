@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <ListView
+        android:id="@+id/msg_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/page_bg"
+        android:divider="@color/list_divider"
+        android:dividerHeight="1px"
+        android:cacheColorHint="@color/page_bg"
+        android:transcriptMode="normal"
+        android:stackFromBottom="true" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:background="#111111">
+
+        <Button
+            android:id="@+id/msg_emoji"
+            style="@style/RetroButton.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="表情" />
+
+        <EditText
+            android:id="@+id/msg_input"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginLeft="6dp"
+            android:background="#2a2a2a"
+            android:hint="@string/message_send_hint"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_tertiary"
+            android:textSize="13sp"
+            android:paddingLeft="8dp"
+            android:singleLine="true" />
+
+        <Button
+            android:id="@+id/msg_send"
+            style="@style/RetroButton.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginLeft="6dp"
+            android:text="发送" />
+    </LinearLayout>
+</LinearLayout>
