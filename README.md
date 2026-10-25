@@ -1,4 +1,4 @@
-﻿# OldBiliRetro · 老版哔哩
+# OldBiliRetro · 老版哔哩
 
 > 面向**古董设备**的第三方哔哩哔哩客户端：Android 2.3 ~ Android 17 全兼容，严格还原 2013–2014 年 Holo Dark 界面。
 
