@@ -278,4 +278,23 @@
 
     <!-- 分享 -->
     <string name="share_url_fmt">https://www.bilibili.com/video/av%d</string>
-</resources>
+    <string name="download_multi">多选</string>
+    <string name="download_multi_exit">退出多选</string>
+    <string name="download_select_all">全选</string>
+    <string name="download_selected_count">已选 %1$d 项</string>
+    <string name="download_batch_start">批量开始</string>
+    <string name="download_batch_delete">批量删除</string>
+    <string name="download_batch_started">已开始 %1$d 个任务</string>
+    <string name="download_batch_none">请先选择任务</string>
+    <string name="download_delete_confirm_title">确认删除</string>
+    <string name="download_delete_confirm_msg">确定要删除选中的 %1$d 个下载任务吗？</string>
+    <string name="download_delete_choice_title">删除方式</string>
+    <string name="download_delete_record">仅删除记录（保留文件）</string>
+    <string name="download_delete_record_file">删除记录和文件</string>
+    <string name="download_deleted">已删除</string>
+    <string name="download_open_location">打开文件位置</string>
+    <string name="download_path_title">文件位置</string>
+    <string name="download_copy_path">复制路径</string>
+    <string name="download_path_copied">路径已复制</string>
+    <string name="download_path_tip">若无法自动打开，请用文件管理器按此路径进入。</string>
+    <string name="update_tip">不要安装旧版本，新版本会越来越完善。</string></resources>

@@ -315,7 +315,13 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void checkUpdate() {
         if (UPDATE_URL == null || UPDATE_URL.length() == 0) {
-            toast(R.string.update_no_url);
+            // 每次更新提示都带上这一行，提醒用户用新版本
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("检查更新")
+                    .setMessage(getString(R.string.update_no_url) + "\n\n"
+                            + getString(R.string.update_tip))
+                    .setPositiveButton("知道了", null)
+                    .show();
             return;
         }
         try {

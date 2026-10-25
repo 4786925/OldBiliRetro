@@ -136,6 +136,24 @@ public class DownloadManager {
         }
     }
 
+    /**
+     * 批量删除。
+     * @param withFiles true=同时删除文件；false=只删记录（保留文件）
+     */
+    public synchronized void deleteBatch(java.util.List<DownloadTask> tasks, boolean withFiles) {
+        if (tasks == null) {
+            return;
+        }
+        for (int i = 0; i < tasks.size(); i++) {
+            DownloadTask t = tasks.get(i);
+            if (withFiles) {
+                delete(t);
+            } else {
+                deleteRecord(t);
+            }
+        }
+    }
+
     // ==================== 队列执行 ====================
 
     private synchronized void startQueue() {

@@ -4,10 +4,78 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!-- 顶部工具条：多选 / 全选 / 已选计数 -->
+    <LinearLayout
+        android:id="@+id/tools_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="6dp"
+        android:background="#111111">
+
+        <Button
+            android:id="@+id/btn_multi"
+            style="@style/RetroButton.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/download_multi" />
+
+        <TextView
+            android:id="@+id/txt_selected"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btn_select_all"
+            style="@style/RetroButton.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/download_select_all"
+            android:visibility="gone" />
+    </LinearLayout>
+
     <include
         android:id="@+id/download_list_root"
-        layout="@layout/widget_list_page" />
+        layout="@layout/widget_list_page"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
+    <!-- 批量操作栏（多选模式显示） -->
+    <LinearLayout
+        android:id="@+id/batch_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:background="#1a1a1a"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/btn_batch_start"
+            style="@style/RetroButton.Small"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/download_batch_start" />
+
+        <Button
+            android:id="@+id/btn_batch_delete"
+            style="@style/RetroButton.Small"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="6dp"
+            android:text="@string/download_batch_delete" />
+    </LinearLayout>
+
+    <!-- 底部：选择目录 / 打开文件夹 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
