@@ -66,7 +66,7 @@
 | Quality | Availability | Notes |
 |---|---|---|
 | 360P | all devices | single stream |
-| 480P | ❌ removed | bilibili no longer serves profile 32; requests fall back to 360P |
+| 480P | removed | bilibili no longer serves profile 32; requests fall back to 360P |
 | 720P | all devices | single stream |
 | 1080P | most videos | single stream; may require login / premium |
 | 1080P 60fps | some videos | requires DASH; hidden on Android 2.x |
@@ -153,7 +153,7 @@ These projects inspired the UI style and legacy-device strategies (low-memory da
 
 | Role | Contributor |
 |---|---|
-| Requirements, testing, decisions | Project founder (human) |
+| Requirements, testing, decisions | Project founder (human Forward_1942) |
 | **Code generation / docs / icons / build scripts** | **DeepSeek** (AI model) |
 | **Agent framework / orchestration** | **DeepSeek Harness** |
 | **Inspiration & reference projects** | **AktuelleKamera** (BiliTerminal, BiliClassic) |
