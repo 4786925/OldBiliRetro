@@ -13,6 +13,7 @@ import com.android.oldbili.retro.api.LoginApi;
 import com.android.oldbili.retro.download.DownloadPathUtil;
 import com.android.oldbili.retro.net.HttpUtil;
 import com.android.oldbili.retro.util.ClipboardCompat;
+import com.android.oldbili.retro.util.Sp;
 import com.android.oldbili.retro.util.CrashHandler;
 import com.android.oldbili.retro.util.DeviceInfoUtil;
 
@@ -24,13 +25,16 @@ import java.io.File;
 public class SettingsActivity extends PreferenceActivity {
 
     /** 官网域名暂时留空，以后再加 */
-    private static final String UPDATE_URL = "";
+    private static final String UPDATE_URL = "http://136.suzushikaze274.com";
 
     private static final int REQ_PICK_DIR = 2002;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getPreferenceManager().setSharedPreferencesName("oldbili");
+        // 偏好项由 PreferenceActivity 自己 inflate，必须在 addPreferencesFromResource 之前装字体
+        com.android.oldbili.retro.util.FontManager.installFactory(this);
         addPreferencesFromResource(R.xml.prefs);
 
         setTitle(R.string.settings_title);
@@ -143,6 +147,39 @@ public class SettingsActivity extends PreferenceActivity {
                         return true;
                     }
                 });
+
+        // 界面字体：二次确认后保存，并结束进程重启应用
+        try {
+            final android.preference.ListPreference fontPref =
+                    (android.preference.ListPreference) findPreference("set_font");
+            if (fontPref != null) {
+                fontPref.setOnPreferenceChangeListener(
+                        new android.preference.Preference.OnPreferenceChangeListener() {
+                            @Override
+                            public boolean onPreferenceChange(android.preference.Preference p,
+                                                              Object newValue) {
+                                final String value = String.valueOf(newValue);
+                                new android.app.AlertDialog.Builder(SettingsActivity.this)
+                                        .setTitle("切换字体")
+                                        .setMessage("您真的要切换字体吗？将结束进程并重启APP")
+                                        .setPositiveButton("确定",
+                                                new android.content.DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(android.content.DialogInterface d,
+                                                                        int w) {
+                                                        Sp.putString(Sp.SET_FONT, value);
+                                                        restartApp();
+                                                    }
+                                                })
+                                        .setNegativeButton(R.string.cancel, null)
+                                        .show();
+                                // 由确认框负责保存，这里不自动写入
+                                return false;
+                            }
+                        });
+            }
+        } catch (Exception ignored) {
+        }
 
         // 兼容性列表（放在利用规约上面）
         findPreference("compat").setOnPreferenceClickListener(
@@ -314,22 +351,31 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void checkUpdate() {
-        if (UPDATE_URL == null || UPDATE_URL.length() == 0) {
-            // 每次更新提示都带上这一行，提醒用户用新版本
-            new android.app.AlertDialog.Builder(this)
-                    .setTitle("检查更新")
-                    .setMessage(getString(R.string.update_no_url) + "\n\n"
-                            + getString(R.string.update_tip))
-                    .setPositiveButton("知道了", null)
-                    .show();
-            return;
-        }
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW,
-                    android.net.Uri.parse(UPDATE_URL)));
-        } catch (Exception e) {
-            toast(R.string.update_no_url);
-        }
+        // 每次更新提示都带上这一行，提醒用户用新版本
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("检查更新")
+                .setMessage(UPDATE_URL + "\n\n" + getString(R.string.update_tip))
+                .setPositiveButton("应用内打开", new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int w) {
+                        startActivity(new Intent(SettingsActivity.this, WebActivity.class)
+                                .putExtra("url", UPDATE_URL)
+                                .putExtra("title", "官网"));
+                    }
+                })
+                .setNeutralButton("系统浏览器", new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int w) {
+                        try {
+                            startActivity(new Intent(Intent.ACTION_VIEW,
+                                    android.net.Uri.parse(UPDATE_URL)));
+                        } catch (Exception e) {
+                            toast(R.string.update_no_url);
+                        }
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void pickDownloadDir() {
@@ -391,4 +437,55 @@ public class SettingsActivity extends PreferenceActivity {
     private void toast(String text) {
         com.android.oldbili.retro.util.ToastUtil.show(this, text);
     }
+
+    /** 结束当前进程并重新启动应用（切换字体后使用） */
+    private void restartApp() {
+        try {
+            android.content.Intent intent = new android.content.Intent(
+                    SettingsActivity.this, SplashActivity.class);
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                    | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            int flags = android.app.PendingIntent.FLAG_CANCEL_CURRENT;
+            if (android.os.Build.VERSION.SDK_INT >= 23) {
+                flags |= 0x04000000; // FLAG_IMMUTABLE
+            }
+            android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                    SettingsActivity.this, 0, intent, flags);
+            android.app.AlarmManager am = (android.app.AlarmManager)
+                    getSystemService(android.content.Context.ALARM_SERVICE);
+            if (am != null) {
+                am.set(android.app.AlarmManager.ELAPSED_REALTIME,
+                        android.os.SystemClock.elapsedRealtime() + 500, pi);
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            android.os.Process.killProcess(android.os.Process.myPid());
+        } catch (Throwable ignored) {
+        }
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 偏好列表的行是异步布局出来的，延迟再套一次字体
+        applyFontToSettings();
+    }
+
+    private void applyFontToSettings() {
+        try {
+            final android.view.View decor = getWindow().getDecorView();
+            com.android.oldbili.retro.util.FontManager.applyTo(decor, this);
+            decor.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    com.android.oldbili.retro.util.FontManager.applyTo(decor,
+                            SettingsActivity.this);
+                }
+            }, 250);
+        } catch (Throwable ignored) {
+        }
+    }
+
 }

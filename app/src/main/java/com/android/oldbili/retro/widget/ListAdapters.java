@@ -40,6 +40,7 @@ public class ListAdapters {
                     ? new ArrayList<com.android.oldbili.retro.model.BangumiCard>()
                     : new ArrayList<com.android.oldbili.retro.model.BangumiCard>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override
@@ -87,6 +88,7 @@ public class ListAdapters {
         public VideoListCompact(Activity activity, List<VideoCard> data) {
             mData = data == null ? new ArrayList<VideoCard>() : new ArrayList<VideoCard>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override
@@ -131,6 +133,7 @@ public class ListAdapters {
         public VideoList(Activity activity, List<VideoCard> data) {
             mData = data == null ? new ArrayList<VideoCard>() : new ArrayList<VideoCard>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override
@@ -172,6 +175,7 @@ public class ListAdapters {
         public UserList(Activity activity, List<UserInfo> data, boolean showRelation) {
             mData = data == null ? new ArrayList<UserInfo>() : new ArrayList<UserInfo>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
             mShowRelation = showRelation;
         }
 
@@ -213,6 +217,7 @@ public class ListAdapters {
         public CommentList(Activity activity, List<Comment> data) {
             mData = data == null ? new ArrayList<Comment>() : new ArrayList<Comment>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override
@@ -253,6 +258,7 @@ public class ListAdapters {
         public LiveList(Activity activity, List<LiveRoom> data) {
             mData = data == null ? new ArrayList<LiveRoom>() : new ArrayList<LiveRoom>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override
@@ -293,6 +299,7 @@ public class ListAdapters {
         public FolderList(Activity activity, List<FavoriteFolder> data) {
             mData = data == null ? new ArrayList<FavoriteFolder>() : new ArrayList<FavoriteFolder>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override
@@ -333,6 +340,7 @@ public class ListAdapters {
         public SessionList(Activity activity, List<MessageSession> data) {
             mData = data == null ? new ArrayList<MessageSession>() : new ArrayList<MessageSession>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override
@@ -375,6 +383,7 @@ public class ListAdapters {
         public MsgList(Activity activity, List<PrivateMessage> data, long myUid, String otherFace) {
             mData = data == null ? new ArrayList<PrivateMessage>() : new ArrayList<PrivateMessage>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
             mMyUid = myUid;
             mOtherFace = otherFace;
         }
@@ -429,6 +438,7 @@ public class ListAdapters {
         public DynamicList(Activity activity, List<DynamicItem> data) {
             mData = data == null ? new ArrayList<DynamicItem>() : new ArrayList<DynamicItem>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override
@@ -471,6 +481,7 @@ public class ListAdapters {
                     ? new ArrayList<com.android.oldbili.retro.model.HistoryItem>()
                     : new ArrayList<com.android.oldbili.retro.model.HistoryItem>(data);
             mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
         }
 
         @Override

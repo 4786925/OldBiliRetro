@@ -86,6 +86,13 @@ public class UserActivity extends BaseActivity {
         mTabVideos = (TextView) findViewById(R.id.tab_videos);
         mTabDynamic = (TextView) findViewById(R.id.tab_dynamic);
         mTabIntro = (TextView) findViewById(R.id.tab_intro);
+        // 分享个人空间：https://space.bilibili.com/<UID>
+        findViewById(R.id.btn_share_space).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                shareSpace();
+            }
+        });
         mBtnFollow = (Button) findViewById(R.id.btn_follow);
         mBtnMessage = (Button) findViewById(R.id.btn_message);
         mIntroScroll = findViewById(R.id.intro_scroll);
@@ -580,5 +587,25 @@ public class UserActivity extends BaseActivity {
                 }
             }
         }).start();
+    }
+
+    /** 分享个人空间链接 */
+    private void shareSpace() {
+        long uid = mUser != null && mUser.mid > 0 ? mUser.mid : mMid;
+        if (uid <= 0) {
+            toast("UID 未知，无法分享");
+            return;
+        }
+        String url = "https://space.bilibili.com/" + uid;
+        try {
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.setType("text/plain");
+            share.putExtra(Intent.EXTRA_TEXT, url);
+            share.putExtra(Intent.EXTRA_SUBJECT, "个人空间");
+            startActivity(Intent.createChooser(share, "分享个人空间"));
+        } catch (Exception e) {
+            com.android.oldbili.retro.util.ClipboardCompat.copyOrShow(
+                    UserActivity.this, url, "链接已复制");
+        }
     }
 }

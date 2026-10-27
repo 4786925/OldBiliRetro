@@ -33,6 +33,7 @@ public class OldBiliApp extends Application {
         // 预热 UA 与 Cookie 静态块
         HttpUtil.TAG.length();
         notifyLastCrash();
+        registerFontCallbacks();
     }
 
     /** 上次崩溃提示：每个崩溃只提示一次，告诉用户日志位置 */
@@ -99,4 +100,60 @@ public class OldBiliApp extends Application {
             }
         }
     }
+
+
+
+    /** 给所有 Activity 装上字体（含 PreferenceActivity / 播放器） */
+    private void registerFontCallbacks() {
+        if (android.os.Build.VERSION.SDK_INT < 14) {
+            return;
+        }
+        try {
+            registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+                @Override
+                public void onActivityCreated(android.app.Activity activity, android.os.Bundle b) {
+                    com.android.oldbili.retro.util.FontManager.installFactory(activity);
+                }
+
+                @Override
+                public void onActivityStarted(android.app.Activity activity) {
+                }
+
+                @Override
+                public void onActivityResumed(final android.app.Activity activity) {
+                    try {
+                        final android.view.View decor = activity.getWindow().getDecorView();
+                        com.android.oldbili.retro.util.FontManager.applyTo(decor, activity);
+                        // 列表/偏好行是稍后布局出来的，延迟补一次
+                        decor.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                com.android.oldbili.retro.util.FontManager.applyTo(decor, activity);
+                            }
+                        }, 300);
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                @Override
+                public void onActivityPaused(android.app.Activity activity) {
+                }
+
+                @Override
+                public void onActivityStopped(android.app.Activity activity) {
+                }
+
+                @Override
+                public void onActivitySaveInstanceState(android.app.Activity activity,
+                                                        android.os.Bundle b) {
+                }
+
+                @Override
+                public void onActivityDestroyed(android.app.Activity activity) {
+                }
+            });
+        } catch (Throwable ignored) {
+        }
+    }
+
 }

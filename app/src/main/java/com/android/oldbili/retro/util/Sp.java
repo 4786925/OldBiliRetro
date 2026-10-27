@@ -49,6 +49,8 @@ public class Sp {
     public static final String SET_DEFAULT_QUALITY = "set_default_quality";
     /** 播放流格式：dash（全清晰度，默认）/ mp4（单流最稳） */
     public static final String SET_STREAM_FORMAT = "set_stream_format";
+    /** 界面字体：system / kai / sans / serif */
+    public static final String SET_FONT = "set_font";
     public static final String SET_AUTO_ROTATE = "set_auto_rotate";
     public static final String SET_DANMAKU_DEFAULT = "set_danmaku_default";
     /** 弹幕状态浮层（屏幕右上角调试信息） */
@@ -70,19 +72,40 @@ public class Sp {
     }
 
     public static String getString(String key, String def) {
-        return sSp.getString(key, def);
+        try {
+            return sSp.getString(key, def);
+        } catch (ClassCastException e) {
+            sSp.edit().remove(key).apply();
+            return def;
+        }
     }
 
     public static int getInt(String key, int def) {
-        return sSp.getInt(key, def);
+        try {
+            return sSp.getInt(key, def);
+        } catch (ClassCastException e) {
+            sSp.edit().remove(key).apply();
+            return def;
+        }
     }
 
     public static long getLong(String key, long def) {
-        return sSp.getLong(key, def);
+        try {
+            return sSp.getLong(key, def);
+        } catch (ClassCastException e) {
+            sSp.edit().remove(key).apply();
+            return def;
+        }
     }
 
     public static boolean getBoolean(String key, boolean def) {
-        return sSp.getBoolean(key, def);
+        try {
+            return sSp.getBoolean(key, def);
+        } catch (ClassCastException e) {
+            // 历史版本可能以别的类型存过同一个 key：删掉用默认值，避免崩溃
+            sSp.edit().remove(key).apply();
+            return def;
+        }
     }
 
     public static float getFloat(String key, float def) {

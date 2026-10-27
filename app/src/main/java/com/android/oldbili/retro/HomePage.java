@@ -244,7 +244,7 @@ public class HomePage {
                             @Override
                             public void run() {
                                 mLives.addAll(result);
-                                mListPage.setAdapter(new ListAdapters.LiveList(mActivity, mLives));
+                                applyAdapterKeepingScroll(new ListAdapters.LiveList(mActivity, mLives));
                                 mListPage.finishLoadMore(result.size() >= 20);
                                 mListPage.finishRefresh();
                                 if (mLives.size() == 0) {
@@ -277,7 +277,7 @@ public class HomePage {
                                 } catch (Exception ignored) {
                                 }
                                 mBangumis.addAll(cards);
-                                mListPage.setAdapter(new ListAdapters.BangumiList(mActivity, mBangumis));
+                                applyAdapterKeepingScroll(new ListAdapters.BangumiList(mActivity, mBangumis));
                                 if (first > 0) {
                                     try {
                                         mListPage.getListView().setSelectionFromTop(first, top);
@@ -311,9 +311,9 @@ public class HomePage {
                             // 首页显示布局：单行大图 / 双行紧凑（设置里切换）
                             boolean doubleLine = "double".equals(Sp.getString(Sp.SET_HOME_LAYOUT, "single"));
                             if (doubleLine) {
-                                mListPage.setAdapter(new ListAdapters.VideoListCompact(mActivity, mVideos));
+                                applyAdapterKeepingScroll(new ListAdapters.VideoListCompact(mActivity, mVideos));
                             } else {
-                                mListPage.setAdapter(new ListAdapters.VideoList(mActivity, mVideos));
+                                applyAdapterKeepingScroll(new ListAdapters.VideoList(mActivity, mVideos));
                             }
                             mListPage.finishLoadMore(result.size() >= 20);
                             mListPage.finishRefresh();
@@ -360,6 +360,22 @@ public class HomePage {
                 return HomeApi.getRanking(0, page);
             }
             return HomeApi.getPopular(page, 20);
+        }
+    }
+
+    /** 换列表数据时保持滚动位置，避免"快速下滑后跳顶" */
+    private void applyAdapterKeepingScroll(android.widget.ListAdapter adapter) {
+        android.widget.ListView lv = mListPage.getListView();
+        int first = 0;
+        int top = 0;
+        if (lv != null && lv.getAdapter() != null) {
+            first = lv.getFirstVisiblePosition();
+            android.view.View child = lv.getChildAt(0);
+            top = child == null ? 0 : child.getTop();
+        }
+        mListPage.setAdapter(adapter);
+        if (first > 0) {
+            lv.setSelectionFromTop(first, top);
         }
     }
 }

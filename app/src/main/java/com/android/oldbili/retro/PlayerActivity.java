@@ -950,7 +950,8 @@ public class PlayerActivity extends Activity {
         findViewById(R.id.btn_dm_settings).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(PlayerActivity.this, DanmakuSettingsActivity.class));
+                startActivity(new Intent(PlayerActivity.this, DanmakuSettingsActivity.class)
+                        .putExtra("landscape", true));
             }
         });
         findViewById(R.id.btn_rotate).setOnClickListener(new View.OnClickListener() {
@@ -1849,5 +1850,50 @@ public class PlayerActivity extends Activity {
 
     private void toast(int resId) {
         toast(getString(resId));
+    }
+
+    /** 按键手机：确认=控制栏，左右=快退/快进 10 秒，*=弹幕开关（PlayerActivity 不继承 BaseActivity，单独接管） */
+    @Override
+    public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (event.getAction() == android.view.KeyEvent.ACTION_DOWN
+                && handleKeypadKey(event.getKeyCode())) {
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    private boolean handleKeypadKey(int keyCode) {
+        // 确认键：无论是否已准备好，都切换控制栏（老设备加载慢时也能用）
+        if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER
+                || keyCode == android.view.KeyEvent.KEYCODE_ENTER) {
+            if (mController != null && mController.getVisibility() == View.VISIBLE) {
+                hideController();
+            } else {
+                showController();
+            }
+            return true;
+        }
+        if (mPlayer == null || !mPrepared) {
+            return false;
+        }
+        switch (keyCode) {
+            case android.view.KeyEvent.KEYCODE_DPAD_LEFT:
+                try {
+                    mPlayer.seekTo(Math.max(0, mPlayer.getCurrentPosition() - 10000));
+                } catch (Exception ignored) {
+                }
+                return true;
+            case android.view.KeyEvent.KEYCODE_DPAD_RIGHT:
+                try {
+                    mPlayer.seekTo(mPlayer.getCurrentPosition() + 10000);
+                } catch (Exception ignored) {
+                }
+                return true;
+            case android.view.KeyEvent.KEYCODE_STAR:
+                toggleDanmaku();
+                return true;
+            default:
+                return false;
+        }
     }
 }

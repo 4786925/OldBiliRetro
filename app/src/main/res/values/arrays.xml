@@ -55,7 +55,6 @@
     </string-array>
     <string-array name="quality_values">
         <item>16</item>
-        <item>32</item>
         <item>64</item>
         <item>80</item>
         <item>116</item>
@@ -71,7 +70,6 @@
     </string-array>
     <string-array name="quality_values_old">
         <item>16</item>
-        <item>32</item>
         <item>64</item>
         <item>80</item>
     </string-array>
@@ -98,5 +96,14 @@
     <string-array name="stream_format_values">
         <item>dash</item>
         <item>mp4</item>
+    </string-array>
+
+    <string-array name="font_entries">
+        <item>系统字体</item>
+        <item>楷体（霞鹜文楷，GB2312）</item>
+    </string-array>
+    <string-array name="font_values">
+        <item>system</item>
+        <item>kai</item>
     </string-array>
 </resources>

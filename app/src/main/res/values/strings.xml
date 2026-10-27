@@ -266,7 +266,7 @@
 
     <!-- 关于 / 彩蛋 -->
     <string name="about_author">作者：换季后吹来的凉风</string>
-    <string name="about_contact">联系方式：2479677176@qq.com</string>
+    <string name="about_contact">联系方式：sturdyfawn41583@gmail.com</string>
     <string name="about_egg_tip">连击5次有彩蛋</string>
     <string name="about_desc">OldBiliRetro\n让古老设备也能日常使用B站。\n基于 IJK Player 与 DanmakuFlameMaster。\n本软件为第三方客户端，与哔哩哔哩无关。\n作者：换季后吹来的凉风（B站UID1061755447）</string>
     <string name="device_info_title">设备信息检测</string>
@@ -297,4 +297,10 @@
     <string name="download_copy_path">复制路径</string>
     <string name="download_path_copied">路径已复制</string>
     <string name="download_path_tip">若无法自动打开，请用文件管理器按此路径进入。</string>
-    <string name="update_tip">不要安装旧版本，新版本会越来越完善。</string></resources>
+    <string name="update_tip">不要安装旧版本，新版本会越来越完善。</string>    <string name="about_icon_author">APP图标作者：鏡鏡鏡不吃魚Channel（B站UID518389127）</string>
+
+    <string name="collection_title">合集</string>
+    <string name="set_font">界面字体</string>
+    <string name="set_font_desc">默认跟随系统；可选内置楷体（GB2312）</string>
+    <string name="font_applied">字体已切换，返回后生效</string>
+</resources>

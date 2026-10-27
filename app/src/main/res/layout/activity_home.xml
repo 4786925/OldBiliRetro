@@ -7,6 +7,7 @@
     <!-- 搜索入口：仿老版客户端，标题下一条搜索框 -->
     <LinearLayout
         android:id="@+id/search_bar"
+        android:focusable="true"
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:orientation="horizontal"
@@ -39,6 +40,7 @@
 
         <TextView
             android:id="@+id/tab_recommend"
+            android:focusable="true"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -49,6 +51,7 @@
 
         <TextView
             android:id="@+id/tab_popular"
+            android:focusable="true"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -59,6 +62,7 @@
 
         <TextView
             android:id="@+id/tab_bangumi"
+            android:focusable="true"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -69,6 +73,7 @@
 
         <TextView
             android:id="@+id/tab_tv"
+            android:focusable="true"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -79,6 +84,7 @@
 
         <TextView
             android:id="@+id/tab_live"
+            android:focusable="true"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"

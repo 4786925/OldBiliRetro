@@ -47,6 +47,10 @@ public class ListPage {
     public ListPage(View root) {
         mRoot = root;
         mListView = (ListView) root.findViewById(R.id.list_view);
+        // 按键手机：让列表可以获得焦点，方向键逐项移动，确认键点击
+        mListView.setFocusable(true);
+        mListView.setFocusableInTouchMode(false);
+        mListView.setItemsCanFocus(true);
         mProgressBar = (ProgressBar) root.findViewById(R.id.progress_bar);
         mEmptyLayout = root.findViewById(R.id.empty_layout);
         mEmptyText = (TextView) root.findViewById(R.id.empty_text);

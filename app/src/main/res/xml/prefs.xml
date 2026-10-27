@@ -62,6 +62,13 @@
             android:title="弹幕设置"
             android:summary="弹幕开关 / 字号 / 透明度 / 行数等" />
         <ListPreference
+            android:key="set_font"
+            android:defaultValue="system"
+            android:entries="@array/font_entries"
+            android:entryValues="@array/font_values"
+            android:title="@string/set_font"
+            android:summary="@string/set_font_desc" />
+        <ListPreference
             android:key="set_stream_format"
             android:title="播放流格式"
             android:summary="DASH：高清晰度全档（480P~2K）；MP4：单流最稳（360P/720P）"

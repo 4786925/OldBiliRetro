@@ -231,6 +231,25 @@
                     android:text="@string/follow" />
             </LinearLayout>
 
+            <!-- 简介 -->
+            <TextView
+                android:id="@+id/intro_title"
+                style="@style/SectionText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="10dp"
+                android:text="@string/video_intro" />
+
+            <TextView
+                android:id="@+id/intro_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingBottom="10dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
             <!-- 选集（分P） -->
             <LinearLayout
                 android:id="@+id/parts_section"
@@ -274,25 +293,6 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
             </LinearLayout>
-
-            <!-- 简介 -->
-            <TextView
-                android:id="@+id/intro_title"
-                style="@style/SectionText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingLeft="10dp"
-                android:text="@string/video_intro" />
-
-            <TextView
-                android:id="@+id/intro_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingLeft="10dp"
-                android:paddingRight="10dp"
-                android:paddingBottom="10dp"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
 
             <!-- 相关推荐 -->
             <TextView

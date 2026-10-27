@@ -3,88 +3,121 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
-    <!-- 头像区 -->
-    <LinearLayout
+<LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:orientation="vertical"
         android:padding="12dp"
         android:background="#161616">
 
-        <com.android.oldbili.retro.widget.RoundedImageView
-            android:id="@+id/avatar"
-            android:layout_width="@dimen/avatar_big"
-            android:layout_height="@dimen/avatar_big"
-            android:src="@drawable/ic_avatar_default" />
-
+        <!-- 第一行：头像 + 文字信息（占满宽度，不再被按钮挤压） -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginLeft="10dp">
+            android:orientation="horizontal"
+            android:gravity="top">
 
-            <TextView
-                android:id="@+id/name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:ellipsize="end"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+            <com.android.oldbili.retro.widget.RoundedImageView
+                android:id="@+id/avatar"
+                android:layout_width="@dimen/avatar_big"
+                android:layout_height="@dimen/avatar_big"
+                android:src="@drawable/ic_avatar_default" />
 
-            <TextView
-                android:id="@+id/uid"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="@color/text_tertiary"
-                android:textSize="11sp" />
+                android:layout_weight="1"
+                android:layout_marginLeft="10dp"
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/stats"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/text_tertiary"
-                android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/sign"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:textColor="@color/text_secondary"
-                android:textSize="11sp" />
+                <TextView
+                    android:id="@+id/uid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/stats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/sign"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
-        <Button
-            android:id="@+id/btn_follow"
-            style="@style/RetroButton.Small"
-            android:layout_width="wrap_content"
+        <!-- 第二行：操作按钮独立一行，四个按钮等分宽度 -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/follow" />
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/btn_message"
-            style="@style/RetroButton.Small"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="6dp"
-            android:text="@string/send_msg" />
+            <Button
+                android:id="@+id/btn_follow"
+                style="@style/RetroButton.Small"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:text="@string/follow"
+                android:textSize="12sp" />
 
-        <Button
-            android:id="@+id/btn_blacklist"
-            style="@style/RetroButton.Small"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="6dp"
-            android:text="拉黑" />
+            <Button
+                android:id="@+id/btn_share_space"
+                style="@style/RetroButton.Small"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="5dp"
+                android:minWidth="0dp"
+                android:text="分享"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/btn_message"
+                style="@style/RetroButton.Small"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="5dp"
+                android:minWidth="0dp"
+                android:text="@string/send_msg"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/btn_blacklist"
+                style="@style/RetroButton.Small"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="5dp"
+                android:minWidth="0dp"
+                android:text="拉黑"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- 空间入口：点赞/投币/收藏夹/追番/追剧 -->

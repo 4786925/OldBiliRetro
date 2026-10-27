@@ -172,7 +172,7 @@
         <activity
             android:name=".DanmakuSettingsActivity"
             android:exported="true"
-            android:screenOrientation="landscape" />
+            android:screenOrientation="portrait" />
         <activity
             android:name=".BangumiListActivity"
             android:exported="true"
@@ -196,6 +196,10 @@
             android:exported="true"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".CollectionListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".CompatActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
@@ -213,5 +217,34 @@
         <service
             android:name=".net.ProxyStreamService"
             android:exported="false" />
-    </application>
+            <!-- 外部链接入口：B 站链接可选择用本应用打开 -->
+        <activity
+            android:name=".UrlOpenActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="www.bilibili.com" />
+                <data android:scheme="https" android:host="m.bilibili.com" />
+                <data android:scheme="https" android:host="bilibili.com" />
+                <data android:scheme="https" android:host="space.bilibili.com" />
+                <data android:scheme="https" android:host="b23.tv" />
+                <data android:scheme="https" android:host="live.bilibili.com" />
+                <data android:scheme="http" android:host="www.bilibili.com" />
+                <data android:scheme="http" android:host="m.bilibili.com" />
+                <data android:scheme="http" android:host="space.bilibili.com" />
+                <data android:scheme="http" android:host="b23.tv" />
+                <data android:scheme="http" android:host="live.bilibili.com" />
+                <data android:scheme="bilibili" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".WebActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+</application>
 </manifest>

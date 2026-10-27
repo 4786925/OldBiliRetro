@@ -13,8 +13,8 @@ android {
         applicationId "com.android.oldbili.retro"
         minSdkVersion 6          // Android 2.0.1，安卓 2 以上全部兼容
         targetSdkVersion 26      // Android 16 亦要求目标版本 >= 24，26 保安装
-        versionCode 3
-        versionName "1.0.2 beta"
+        versionCode 5
+        versionName "1.0.3 beta"
 
         // IJK 官方原版库覆盖的 ABI：ARMv5/v7/v8 + x86 + x86_64（MIPS 官方不提供，去掉）
         ndk {

@@ -155,4 +155,20 @@ public class MainActivity extends BaseActivity {
                 break;
         }
     }
+
+    /** 按键手机：左右键切换底部标签页 */
+    @Override
+    protected boolean onKeypadKey(int keyCode) {
+        if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT) {
+            switchTab((mCurrentTab + TAB_IDS.length - 1) % TAB_IDS.length);
+            return true;
+        }
+        if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT) {
+            switchTab((mCurrentTab + 1) % TAB_IDS.length);
+            return true;
+        }
+        return false;
+    }
+
+
 }

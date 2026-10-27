@@ -485,6 +485,7 @@ public class DownloadActivity extends BaseActivity {
 
         private List<DownloadTask> mTasks;
         private final LayoutInflater mInflater = LayoutInflater.from(DownloadActivity.this);
+        { com.android.oldbili.retro.util.FontManager.setFactory(mInflater, DownloadActivity.this); }
 
         TaskAdapter(List<DownloadTask> tasks) {
             mTasks = tasks;

@@ -26,8 +26,82 @@ public class BaseActivity extends Activity {
     private TextView mCompatTitle;
     private boolean mShowBack = true;
 
+    /** 日系按键手机：上下键在列表中移动选中项，确认键点击 */
+    private int mKeyIndex = -1;
+
+    @Override
+    public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
+            int code = event.getKeyCode();
+            android.widget.ListView lv = findKeyListView();
+            if (code == android.view.KeyEvent.KEYCODE_DPAD_DOWN
+                    || code == android.view.KeyEvent.KEYCODE_DPAD_UP) {
+                if (lv != null && lv.getAdapter() != null && lv.getAdapter().getCount() > 0) {
+                    int count = lv.getAdapter().getCount();
+                    if (mKeyIndex < 0) {
+                        mKeyIndex = 0;
+                    } else {
+                        mKeyIndex += (code == android.view.KeyEvent.KEYCODE_DPAD_DOWN ? 1 : -1);
+                    }
+                    if (mKeyIndex < 0) {
+                        mKeyIndex = 0;
+                    }
+                    if (mKeyIndex >= count) {
+                        mKeyIndex = count - 1;
+                    }
+                    lv.setSelection(mKeyIndex);
+                    lv.requestFocus();
+                    return true;
+                }
+            } else if (code == android.view.KeyEvent.KEYCODE_DPAD_CENTER
+                    || code == android.view.KeyEvent.KEYCODE_ENTER) {
+                if (lv != null && lv.getAdapter() != null
+                        && mKeyIndex >= 0 && mKeyIndex < lv.getAdapter().getCount()) {
+                    int visible = mKeyIndex - lv.getFirstVisiblePosition();
+                    View child = lv.getChildAt(visible);
+                    lv.performItemClick(child, mKeyIndex, lv.getAdapter().getItemId(mKeyIndex));
+                    return true;
+                }
+                View focus = getCurrentFocus();
+                if (focus != null) {
+                    focus.performClick();
+                    return true;
+                }
+            }
+            if (onKeypadKey(code)) {
+                return true;
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    /** 子类可覆盖：额外的按键快捷键（左右键等） */
+    protected boolean onKeypadKey(int keyCode) {
+        return false;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 兜底：已创建好的视图（含列表项）也套上当前字体
+        try {
+            com.android.oldbili.retro.util.FontManager.applyTo(getWindow().getDecorView(), this);
+        } catch (Exception ignored) {
+        }
+        mKeyIndex = -1;
+    }
+
+    private android.widget.ListView findKeyListView() {
+        View v = findViewById(R.id.list_view);
+        if (v instanceof android.widget.ListView) {
+            return (android.widget.ListView) v;
+        }
+        return null;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        installFontFactory();
         super.onCreate(savedInstanceState);
         com.android.oldbili.retro.util.CrashHandler.setCurrentPage(getClass().getSimpleName());
     }
@@ -43,6 +117,7 @@ public class BaseActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 11) {
             super.setContentView(view);
             setupActionBar();
+            com.android.oldbili.retro.util.FontManager.applyTo(view, this);
         } else {
             super.setContentView(buildCompatRoot(view));
         }
@@ -187,4 +262,56 @@ public class BaseActivity extends Activity {
             }, 100);
         }
     }
+
+    // ==================== 自定义字体（LayoutInflater.Factory） ====================
+
+    private void installFontFactory() {
+        try {
+            // 关键：把 Factory 装到底层 Context 的 inflater 上。
+            // Activity/适配器用 LayoutInflater.from(ctx) 时是 cloneInContext，
+            // clone 会复制 factory，所以从这里设置才能覆盖所有界面。
+            final android.view.LayoutInflater base =
+                    (android.view.LayoutInflater) getBaseContext()
+                            .getSystemService(android.content.Context.LAYOUT_INFLATER_SERVICE);
+            final android.view.LayoutInflater delegate = base.cloneInContext(this);
+            android.view.LayoutInflater.Factory factory =
+                    new android.view.LayoutInflater.Factory() {
+                        @Override
+                        public View onCreateView(String name, android.content.Context context,
+                                                 android.util.AttributeSet attrs) {
+                            return createFontViewStatic(delegate, name, context, attrs);
+                        }
+                    };
+            base.setFactory(factory);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static final ThreadLocal<Boolean> sInFontFactory = new ThreadLocal<Boolean>();
+
+    private static View createFontViewStatic(android.view.LayoutInflater delegate, String name,
+                                             android.content.Context context,
+                                             android.util.AttributeSet attrs) {
+        // 防止 delegate 继承了本 factory 造成无限递归（表现为白屏后闪退）
+        if (Boolean.TRUE.equals(sInFontFactory.get())) {
+            return null;
+        }
+        sInFontFactory.set(Boolean.TRUE);
+        try {
+            View v = delegate.createView(name, null, attrs);
+            if (v instanceof android.widget.TextView) {
+                android.graphics.Typeface tf =
+                        com.android.oldbili.retro.util.FontManager.get(context);
+                if (tf != null) {
+                    ((android.widget.TextView) v).setTypeface(tf);
+                }
+            }
+            return v;
+        } catch (Throwable e) {
+            return null;
+        } finally {
+            sInFontFactory.remove();
+        }
+    }
+
 }

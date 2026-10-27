@@ -561,35 +561,27 @@ public class VideoDetailActivity extends BaseActivity {
             findViewById(R.id.parts_section).setVisibility(View.GONE);
         }
 
-        // 合集
+        // 合集：默认折叠，只显示一行标题；点击打开完整合集列表（可包含几百段）
         if (mDetail.isCollection()) {
             findViewById(R.id.collection_section).setVisibility(View.VISIBLE);
-            Collection c = mDetail.collection;
-            ((TextView) findViewById(R.id.collection_title)).setText(
-                    c.title + " · " + getString(R.string.video_collection)
-                            .replace("%d", String.valueOf(c.episodes.size())));
+            final Collection c = mDetail.collection;
+            TextView titleView = (TextView) findViewById(R.id.collection_title);
+            titleView.setText(c.title + " · "
+                    + getString(R.string.video_collection).replace("%d",
+                    String.valueOf(c.episodes.size())) + "  ›");
             LinearLayout container = (LinearLayout) findViewById(R.id.collection_container);
-            for (int i = 0; i < c.episodes.size(); i++) {
-                final Collection.Episode ep = c.episodes.get(i);
-                View row = LayoutInflater.from(this).inflate(R.layout.widget_item_folder, null);
-                ((TextView) row.findViewById(R.id.title)).setText((i + 1) + ". " + ep.title);
-                ((TextView) row.findViewById(R.id.count)).setText("");
-                ImageLoader.get().load((ImageView) row.findViewById(R.id.cover),
-                        ImageLoader.coverUrl(ep.cover, 160, 100));
-                row.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent(VideoDetailActivity.this, VideoDetailActivity.class);
-                        if (ep.bvid != null && ep.bvid.length() > 0) {
-                            intent.putExtra("bvid", ep.bvid);
-                        } else {
-                            intent.putExtra("aid", ep.aid);
-                        }
-                        startActivity(intent);
-                    }
-                });
-                container.addView(row);
-            }
+            container.setVisibility(View.GONE);
+            titleView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(VideoDetailActivity.this,
+                            CollectionListActivity.class);
+                    intent.putExtra("aid", mDetail.aid);
+                    intent.putExtra("bvid", mDetail.bvid);
+                    intent.putExtra("current_aid", mDetail.aid);
+                    startActivity(intent);
+                }
+            });
         }
     }
 

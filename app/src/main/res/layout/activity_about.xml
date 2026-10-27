@@ -6,6 +6,19 @@
     android:gravity="center_horizontal"
     android:padding="24dp">
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingBottom="24dp">
+
+
     <ImageView
         android:layout_width="96dp"
         android:layout_height="96dp"
@@ -54,4 +67,17 @@
         android:text="@string/about_contact"
         android:textColor="@color/text_tertiary"
         android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/about_icon_author"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:text="@string/about_icon_author"
+        android:textColor="@color/text_tertiary"
+        android:textSize="12sp" />
+
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

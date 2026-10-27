@@ -144,6 +144,7 @@ ALIAS_PASSWORD=******
 | Android Support Library | v4 19.1.0 | Apache-2.0 | 兼容层（源码 vendor） |
 | RecyclerView / CardView | 21.0.0 | Apache-2.0 | 列表与卡片（源码 vendor） |
 | SwetakeQRCode | 2005 | 原作者免费条款 | 登录二维码 |
+| 霞鹜文楷 LXGW WenKai | Regular | SIL OFL 1.1 | 内置楷体（GB2312 子集） |
 
 详见 **[THIRD_PARTY.md](THIRD_PARTY.md)**。
 
@@ -159,6 +160,12 @@ ALIAS_PASSWORD=******
 本项目**未复制其源代码**；`ref/` 目录下的参考源码仅用于阅读比对，**不随仓库发布**。
 
 ---
+
+## 图标
+
+应用图标（泉此方抱小电视）：**鏡鏡鏡不吃魚Channel**
+主页：https://space.bilibili.com/518389127
+感谢授权使用。
 
 ## 贡献者
 

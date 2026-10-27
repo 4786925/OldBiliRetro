@@ -22,6 +22,11 @@ public class DanmakuSettingsActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // 只有从播放器进入时才强制横屏；从"我的→设置"进来保持竖屏
+        if (getIntent() != null && getIntent().getBooleanExtra("landscape", false)) {
+            setRequestedOrientation(
+                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
         setTitle("弹幕设置");
         setContentView(R.layout.activity_decoder_settings);
         mRows = (LinearLayout) findViewById(R.id.rows);
