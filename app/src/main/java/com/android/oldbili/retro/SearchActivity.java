@@ -49,6 +49,9 @@ public class SearchActivity extends BaseActivity {
             new ArrayList<com.android.oldbili.retro.model.BangumiCard>();
     private final List<com.android.oldbili.retro.model.LiveRoom> mLives =
             new ArrayList<com.android.oldbili.retro.model.LiveRoom>();
+    /** 影视（type=2）单独一段缓存，避免和番剧互相覆盖 */
+    private final List<com.android.oldbili.retro.model.BangumiCard> mTvs =
+            new ArrayList<com.android.oldbili.retro.model.BangumiCard>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,6 +119,26 @@ public class SearchActivity extends BaseActivity {
             doSearch();
         }
 
+        // 下拉刷新：清掉当前类型重新拉取
+        mListPage.enablePullRefresh(new ListPage.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                if (mCurrentKeyword == null || mCurrentKeyword.length() == 0) {
+                    mListPage.finishRefresh();
+                    return;
+                }
+                clearCurrentType();
+                mPage = 1;
+                load(1);
+                mListPage.getListView().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mListPage.finishRefresh();
+                    }
+                }, 600);
+            }
+        });
+
         mListPage.setOnLoadMore(new ListPage.OnLoadMoreListener() {
             @Override
             public void onLoadMore(int page) {
@@ -136,8 +159,10 @@ public class SearchActivity extends BaseActivity {
                     return;
                 }
                 if (mSearchType == 1 || mSearchType == 2) {
-                    if (idx >= 0 && idx < mBangumis.size()) {
-                        com.android.oldbili.retro.model.BangumiCard card = mBangumis.get(idx);
+                    List<com.android.oldbili.retro.model.BangumiCard> list =
+                            mSearchType == 2 ? mTvs : mBangumis;
+                    if (idx >= 0 && idx < list.size()) {
+                        com.android.oldbili.retro.model.BangumiCard card = list.get(idx);
                         Intent intent = new Intent(SearchActivity.this, VideoDetailActivity.class);
                         intent.putExtra("season_id", card.seasonId);
                         intent.putExtra("type", mSearchType == 1
@@ -212,6 +237,13 @@ public class SearchActivity extends BaseActivity {
         }
 
         saveHistory(keyword);
+        if (!keyword.equals(mCurrentKeyword)) {
+            mVideos.clear();
+            mUsers.clear();
+            mBangumis.clear();
+            mTvs.clear();
+            mLives.clear();
+        }
         mCurrentKeyword = keyword;
         mHistoryScroll.setVisibility(View.GONE);
         mTypeRow.setVisibility(View.VISIBLE);
@@ -221,16 +253,64 @@ public class SearchActivity extends BaseActivity {
 
     private void startSearch() {
         mPage = 1;
-        mVideos.clear();
-        mUsers.clear();
-        mBangumis.clear();
-        mLives.clear();
+        // 该类型已有结果就直接用缓存（切换页签不再清空、不再重复请求）
+        if (hasCached(mSearchType)) {
+            renderCached();
+            return;
+        }
         load(1);
+    }
+
+    private boolean hasCached(int type) {
+        if (type == 1) {
+            return !mBangumis.isEmpty();
+        }
+        if (type == 2) {
+            return !mTvs.isEmpty();
+        }
+        if (type == 3) {
+            return !mLives.isEmpty();
+        }
+        if (type == 4) {
+            return !mUsers.isEmpty();
+        }
+        return !mVideos.isEmpty();
+    }
+
+    private void clearCurrentType() {
+        if (mSearchType == 1) {
+            mBangumis.clear();
+        } else if (mSearchType == 2) {
+            mTvs.clear();
+        } else if (mSearchType == 3) {
+            mLives.clear();
+        } else if (mSearchType == 4) {
+            mUsers.clear();
+        } else {
+            mVideos.clear();
+        }
+    }
+
+    /** 直接渲染已缓存的结果（切换页签立即显示） */
+    private void renderCached() {
+        if (mSearchType == 1) {
+            mListPage.setAdapter(new ListAdapters.BangumiList(this, mBangumis));
+        } else if (mSearchType == 2) {
+            mListPage.setAdapter(new ListAdapters.BangumiList(this, mTvs));
+        } else if (mSearchType == 3) {
+            mListPage.setAdapter(new ListAdapters.LiveList(this, mLives));
+        } else if (mSearchType == 4) {
+            mListPage.setAdapter(new ListAdapters.UserList(this, mUsers, false));
+        } else {
+            mListPage.setAdapter(new ListAdapters.VideoList(this, mVideos));
+        }
+        mListPage.finishLoadMore(true);
+        mListPage.showContent();
     }
 
     private void load(final int page) {
         if (page == 1) {
-            mListPage.showLoading();
+            mListPage.showLoading("加载中…");
         }
         // 翻页时记录/恢复滚动位置（setAdapter 重建会跳回顶部）
         final int[] scroll = page == 1 ? null : captureScroll();
@@ -239,7 +319,7 @@ public class SearchActivity extends BaseActivity {
             public void run() {
                 try {
                     if (mSearchType == 4) {
-                        final List<UserInfo> users = SearchApi.searchUser(mCurrentKeyword, page);
+                        final List<UserInfo> users = fetchUsers(page);
                         runOnUi(new Runnable() {
                             @Override
                             public void run() {
@@ -256,15 +336,20 @@ public class SearchActivity extends BaseActivity {
                         });
                     } else if (mSearchType == 1 || mSearchType == 2) {
                         final List<com.android.oldbili.retro.model.BangumiCard> cards =
-                                SearchApi.searchBangumi(mCurrentKeyword, page, mSearchType == 2);
+                                fetchBangumi(page);
                         runOnUi(new Runnable() {
                             @Override
                             public void run() {
-                                mBangumis.addAll(cards);
-                                mListPage.setAdapter(new ListAdapters.BangumiList(SearchActivity.this, mBangumis));
+                                if (mSearchType == 2) {
+                                    mTvs.addAll(cards);
+                                } else {
+                                    mBangumis.addAll(cards);
+                                }
+                                mListPage.setAdapter(new ListAdapters.BangumiList(
+                                        SearchActivity.this, mSearchType == 2 ? mTvs : mBangumis));
                                 restoreScroll(scroll);
                                 mListPage.finishLoadMore(cards.size() >= 20);
-                                if (mBangumis.size() == 0) {
+                                if ((mSearchType == 2 ? mTvs.size() : mBangumis.size()) == 0) {
                                     mListPage.showEmpty(mSearchType == 1 ? "没有找到相关番剧" : "没有找到相关影视");
                                 } else {
                                     mListPage.showContent();
@@ -273,7 +358,7 @@ public class SearchActivity extends BaseActivity {
                         });
                     } else if (mSearchType == 3) {
                         final List<com.android.oldbili.retro.model.LiveRoom> lives =
-                                SearchApi.searchLive(mCurrentKeyword, page);
+                                fetchLive(page);
                         runOnUi(new Runnable() {
                             @Override
                             public void run() {
@@ -289,7 +374,7 @@ public class SearchActivity extends BaseActivity {
                             }
                         });
                     } else {
-                        final List<VideoCard> videos = SearchApi.searchVideo(mCurrentKeyword, page);
+                        final List<VideoCard> videos = fetchVideos(page);
                         runOnUi(new Runnable() {
                             @Override
                             public void run() {
@@ -310,7 +395,8 @@ public class SearchActivity extends BaseActivity {
                         @Override
                         public void run() {
                             if (mVideos.size() == 0 && mUsers.size() == 0
-                                    && mBangumis.size() == 0 && mLives.size() == 0) {
+                                    && mBangumis.size() == 0 && mTvs.size() == 0
+                                    && mLives.size() == 0) {
                                 mListPage.showError(e.getMessage(), new Runnable() {
                                     @Override
                                     public void run() {
@@ -415,5 +501,51 @@ public class SearchActivity extends BaseActivity {
             tv.setPadding(DensityUtil.dp2px(this, 12), DensityUtil.dp2px(this, 20), 0, 0);
             mHistoryItems.addView(tv);
         }
+    }
+
+    // ==================== 带自动重试的搜索请求（412/空结果重试） ====================
+
+    private static void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    private List<VideoCard> fetchVideos(int page) throws Exception {
+        List<VideoCard> l = SearchApi.searchVideo(mCurrentKeyword, page);
+        for (int r = 0; page == 1 && l.isEmpty() && r < 2; r++) {
+            sleep(800L * (r + 1));
+            l = SearchApi.searchVideo(mCurrentKeyword, page);
+        }
+        return l;
+    }
+
+    private List<UserInfo> fetchUsers(int page) throws Exception {
+        List<UserInfo> l = SearchApi.searchUser(mCurrentKeyword, page);
+        for (int r = 0; page == 1 && l.isEmpty() && r < 2; r++) {
+            sleep(800L * (r + 1));
+            l = SearchApi.searchUser(mCurrentKeyword, page);
+        }
+        return l;
+    }
+
+    private List<com.android.oldbili.retro.model.LiveRoom> fetchLive(int page) throws Exception {
+        List<com.android.oldbili.retro.model.LiveRoom> l = SearchApi.searchLive(mCurrentKeyword, page);
+        for (int r = 0; page == 1 && l.isEmpty() && r < 2; r++) {
+            sleep(800L * (r + 1));
+            l = SearchApi.searchLive(mCurrentKeyword, page);
+        }
+        return l;
+    }
+
+    private List<com.android.oldbili.retro.model.BangumiCard> fetchBangumi(int page) throws Exception {
+        List<com.android.oldbili.retro.model.BangumiCard> l =
+                SearchApi.searchBangumi(mCurrentKeyword, page, mSearchType == 2);
+        for (int r = 0; page == 1 && l.isEmpty() && r < 2; r++) {
+            sleep(800L * (r + 1));
+            l = SearchApi.searchBangumi(mCurrentKeyword, page, mSearchType == 2);
+        }
+        return l;
     }
 }

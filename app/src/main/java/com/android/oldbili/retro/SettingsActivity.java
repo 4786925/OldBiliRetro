@@ -148,39 +148,6 @@ public class SettingsActivity extends PreferenceActivity {
                     }
                 });
 
-        // 界面字体：二次确认后保存，并结束进程重启应用
-        try {
-            final android.preference.ListPreference fontPref =
-                    (android.preference.ListPreference) findPreference("set_font");
-            if (fontPref != null) {
-                fontPref.setOnPreferenceChangeListener(
-                        new android.preference.Preference.OnPreferenceChangeListener() {
-                            @Override
-                            public boolean onPreferenceChange(android.preference.Preference p,
-                                                              Object newValue) {
-                                final String value = String.valueOf(newValue);
-                                new android.app.AlertDialog.Builder(SettingsActivity.this)
-                                        .setTitle("切换字体")
-                                        .setMessage("您真的要切换字体吗？将结束进程并重启APP")
-                                        .setPositiveButton("确定",
-                                                new android.content.DialogInterface.OnClickListener() {
-                                                    @Override
-                                                    public void onClick(android.content.DialogInterface d,
-                                                                        int w) {
-                                                        Sp.putString(Sp.SET_FONT, value);
-                                                        restartApp();
-                                                    }
-                                                })
-                                        .setNegativeButton(R.string.cancel, null)
-                                        .show();
-                                // 由确认框负责保存，这里不自动写入
-                                return false;
-                            }
-                        });
-            }
-        } catch (Exception ignored) {
-        }
-
         // 兼容性列表（放在利用规约上面）
         findPreference("compat").setOnPreferenceClickListener(
                 new Preference.OnPreferenceClickListener() {

@@ -121,7 +121,7 @@ public class DynamicPage {
             mListPage.setAdapter(new ListAdapters.DynamicList(mActivity, mItems));
             mListPage.showContent();
         } else {
-            mListPage.showLoading();
+            mListPage.showLoading("加载中…");
         }
         loadMore();
     }

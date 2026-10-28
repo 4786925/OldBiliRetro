@@ -479,7 +479,7 @@ public class UserActivity extends BaseActivity {
         if (tab == TAB_VIDEOS) {
             if (!mVideoTabLoaded) {
                 mVideoTabLoaded = true;
-                mListPage.showLoading();
+                mListPage.showLoading("加载中…");
                 loadVideos(1);
             } else {
                 mListPage.setAdapter(new ListAdapters.VideoList(this, mVideos));
@@ -488,7 +488,7 @@ public class UserActivity extends BaseActivity {
         } else {
             if (!mDynamicTabLoaded) {
                 mDynamicTabLoaded = true;
-                mListPage.showLoading();
+                mListPage.showLoading("加载中…");
                 loadDynamics("");
             } else {
                 mListPage.setAdapter(new ListAdapters.DynamicList(this, mDynamics));

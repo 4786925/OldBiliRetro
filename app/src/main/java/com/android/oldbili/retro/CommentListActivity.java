@@ -178,7 +178,7 @@ public class CommentListActivity extends BaseActivity {
         final int sort = mSort;
         // 只有首屏才显示整页加载圈；翻页时列表保持不动，只走底部"加载中"
         if (mComments.isEmpty()) {
-            mListPage.showLoading();
+            mListPage.showLoading("加载中…");
         }
         new Thread(new Runnable() {
             @Override

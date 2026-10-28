@@ -51,7 +51,7 @@ public class HttpUtil {
     private static final int CONNECT_TIMEOUT = 15000;
     private static final int READ_TIMEOUT = 20000;
     private static final int MAX_REDIRECT = 5;
-    private static final int MAX_RETRY = 1;
+    private static final int MAX_RETRY = 2;
 
     /** 响应体上限，老机器内存小，防止大 JSON 直接 OOM */
     private static final int MAX_RESPONSE_BYTES = 6 * 1024 * 1024;
@@ -410,6 +410,21 @@ public class HttpUtil {
                 }
                 String result = readBody(conn, code);
                 saveSetCookie(conn);
+                // 412 / -352 是风控：清掉 buvid 后重试
+                boolean risk = code == 412
+                        || (result != null && (result.contains("\"code\":-412")
+                        || result.contains("\"code\":-352")));
+                if (risk) {
+                    Log.w(TAG, "风控 " + code + "，重试: " + url);
+                    invalidateBuvid3();
+                    if (attempt < MAX_RETRY) {
+                        try {
+                            Thread.sleep(700L * (attempt + 1));
+                        } catch (InterruptedException ignored) {
+                        }
+                        continue;
+                    }
+                }
                 if (result != null && result.length() > 0) {
                     return result;
                 }

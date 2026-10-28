@@ -15,6 +15,9 @@ import android.widget.TextView;
  */
 public class FontManager {
 
+    /** 字体切换功能暂时关闭（预留，后续可重新开启） */
+    public static final boolean ENABLED = false;
+
     public static final String FONT_SYSTEM = "system";
     public static final String FONT_KAI = "kai";
 
@@ -23,6 +26,9 @@ public class FontManager {
     private static Typeface sCachedTypeface;
 
     public static String currentName() {
+        if (!ENABLED) {
+            return FONT_SYSTEM;
+        }
         String v = Sp.getString(Sp.SET_FONT, FONT_SYSTEM);
         return v == null ? FONT_SYSTEM : v;
     }

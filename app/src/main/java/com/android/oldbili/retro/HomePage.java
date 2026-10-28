@@ -222,7 +222,7 @@ public class HomePage {
 
     private void load(final int page) {
         if (page == 1) {
-            mListPage.showLoading();
+            mListPage.showLoading("加载中…");
         }
         new Thread(new Runnable() {
             @Override

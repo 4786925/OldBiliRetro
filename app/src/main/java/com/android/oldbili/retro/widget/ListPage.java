@@ -135,6 +135,15 @@ public class ListPage {
     }
 
     /** 显示加载中（转圈） */
+    /** 加载中：转圈 + 文字提示 */
+    public void showLoading(String text) {
+        mListView.setVisibility(View.GONE);
+        mErrorLayout.setVisibility(View.GONE);
+        mProgressBar.setVisibility(View.VISIBLE);
+        mEmptyText.setText(text);
+        mEmptyLayout.setVisibility(View.VISIBLE);
+    }
+
     public void showLoading() {
         mListView.setVisibility(View.GONE);
         mEmptyLayout.setVisibility(View.GONE);

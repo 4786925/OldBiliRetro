@@ -136,7 +136,7 @@ public class FavoriteFolderActivity extends BaseActivity {
                 return;
             }
             // 已登录但本地 MID 缺失：从 nav 接口补回来再刷新
-            mListPage.showLoading();
+            mListPage.showLoading("加载中…");
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -179,7 +179,7 @@ public class FavoriteFolderActivity extends BaseActivity {
             }).start();
             return;
         }
-        mListPage.showLoading();
+        mListPage.showLoading("加载中…");
         new Thread(new Runnable() {
             @Override
             public void run() {
