@@ -25,6 +25,12 @@ public class DownloadPathUtil {
 
     /** 目录抽象：File 或 SAF 文档目录，对外统一 openOutputStream */
     public interface Folder {
+        /** 子目录（不支持时返回 null） */
+        Folder subFolder(String name) throws Exception;
+
+        /** 文件的绝对路径（SAF 下返回 null） */
+        String pathOf(String name);
+
         OutputStream openOutputStream(String name) throws FileNotFoundException;
 
         /** 追加写（断点续传）；FileFolder 支持续传，SafFolder 退回覆盖写 */
@@ -44,6 +50,20 @@ public class DownloadPathUtil {
     /** 普通 File 目录 */
     public static class FileFolder implements Folder {
         private final File mDir;
+
+        @Override
+        public Folder subFolder(String name) throws Exception {
+            File dir = new File(mDir, name);
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw new java.io.IOException("无法创建目录: " + dir.getAbsolutePath());
+            }
+            return new FileFolder(dir);
+        }
+
+        @Override
+        public String pathOf(String name) {
+            return new File(mDir, name).getAbsolutePath();
+        }
 
         public FileFolder(File dir) {
             mDir = dir;
@@ -92,6 +112,17 @@ public class DownloadPathUtil {
 
     /** SAF 树目录（自写的最小 TreeDocumentFile，兼容老 support 库没有 DocumentFile） */
     public static class SafFolder implements Folder {
+        @Override
+        public Folder subFolder(String name) {
+            // SAF 目录下暂不支持自动建子目录
+            return null;
+        }
+
+        @Override
+        public String pathOf(String name) {
+            return null;
+        }
+
         private final ContentResolver mResolver;
         private final Uri mTreeUri;
 

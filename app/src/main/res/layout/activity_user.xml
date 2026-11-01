@@ -214,6 +214,16 @@
             android:textSize="14sp" />
 
         <TextView
+            android:id="@+id/tab_fav"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="收藏"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <TextView
             android:id="@+id/tab_intro"
             android:layout_width="0dp"
             android:layout_height="match_parent"

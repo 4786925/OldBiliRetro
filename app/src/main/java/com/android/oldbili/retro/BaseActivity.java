@@ -81,8 +81,15 @@ public class BaseActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        com.android.oldbili.retro.widget.ListPage.savePositionForActivity(this);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+        com.android.oldbili.retro.widget.ListPage.restorePositionForActivity(this);
         // 兜底：已创建好的视图（含列表项）也套上当前字体
         try {
             com.android.oldbili.retro.util.FontManager.applyTo(getWindow().getDecorView(), this);
@@ -103,6 +110,7 @@ public class BaseActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         installFontFactory();
         super.onCreate(savedInstanceState);
+        applyScreenOrientation();
         com.android.oldbili.retro.util.CrashHandler.setCurrentPage(getClass().getSimpleName());
     }
 
@@ -311,6 +319,26 @@ public class BaseActivity extends Activity {
             return null;
         } finally {
             sInFontFactory.remove();
+        }
+    }
+
+
+    /** 按设置应用屏幕方向（播放器自己固定横屏，不在此列） */
+    protected void applyScreenOrientation() {
+        try {
+            String mode = com.android.oldbili.retro.util.Sp.getString(
+                    com.android.oldbili.retro.util.Sp.SET_SCREEN_ORIENTATION, "auto");
+            if ("portrait".equals(mode)) {
+                setRequestedOrientation(
+                        android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            } else if ("landscape".equals(mode)) {
+                setRequestedOrientation(
+                        android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            } else {
+                setRequestedOrientation(
+                        android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            }
+        } catch (Throwable ignored) {
         }
     }
 

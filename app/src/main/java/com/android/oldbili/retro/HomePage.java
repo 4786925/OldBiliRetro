@@ -60,6 +60,7 @@ public class HomePage {
         if (mView == null) {
             mView = LayoutInflater.from(mActivity).inflate(R.layout.activity_home, null);
             mListPage = new ListPage(mView);
+        setupSwipe();
             mTabRecommend = (TextView) mView.findViewById(R.id.tab_recommend);
             mTabPopular = (TextView) mView.findViewById(R.id.tab_popular);
             mTabBangumi = (TextView) mView.findViewById(R.id.tab_bangumi);
@@ -376,6 +377,29 @@ public class HomePage {
         mListPage.setAdapter(adapter);
         if (first > 0) {
             lv.setSelectionFromTop(first, top);
+        }
+    }
+
+
+    /** 主页左右滑动切换 tag */
+    private void setupSwipe() {
+        try {
+            mListPage.setOnSwipeListener(new com.android.oldbili.retro.widget.ListPage.OnSwipeListener() {
+                @Override
+                public void onSwipeLeft() {
+                    if (mTab < 4) {
+                        switchTab(mTab + 1);
+                    }
+                }
+
+                @Override
+                public void onSwipeRight() {
+                    if (mTab > 0) {
+                        switchTab(mTab - 1);
+                    }
+                }
+            });
+        } catch (Throwable ignored) {
         }
     }
 }

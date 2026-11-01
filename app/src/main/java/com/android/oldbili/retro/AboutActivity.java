@@ -23,8 +23,14 @@ public class AboutActivity extends BaseActivity {
         setTitle(R.string.set_about);
         setContentView(R.layout.activity_about);
 
-        ((TextView) findViewById(R.id.version)).setText(
-                "版本 " + DeviceInfoUtil.getAppVersion(this));
+        TextView versionView = (TextView) findViewById(R.id.version);
+        versionView.setText("版本 " + DeviceInfoUtil.getAppVersion(this));
+        versionView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(AboutActivity.this, ChangelogActivity.class));
+            }
+        });
 
         Button authorButton = (Button) findViewById(R.id.author_button);
         authorButton.setOnClickListener(new View.OnClickListener() {

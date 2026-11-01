@@ -15,6 +15,11 @@ import java.util.List;
  */
 public class CommentApi {
 
+    /** 上一次评论请求返回的评论总数（cursor.all_count），0 表示未知 */
+    public static long sLastTotal;
+    /** 上一次楼中楼请求返回的回复总数（0 表示未知） */
+    public static long sLastSubTotal;
+
     /** 视频评论列表，cursor 传空表示第一页，floorBase 是已加载条数（楼层续排），返回 [列表, 下一页cursor] */
     public static Object[] getVideoComments(long oid, int mode, String cursor, int ps, int floorBase)
             throws IOException, org.json.JSONException {
@@ -42,6 +47,7 @@ public class CommentApi {
         String next = "";
         JSONObject cursorObj = data.optJSONObject("cursor");
         if (cursorObj != null) {
+            sLastTotal = cursorObj.optLong("all_count", 0);
             JSONObject pagination = cursorObj.optJSONObject("pagination_reply");
             if (pagination != null) {
                 next = pagination.optString("next_offset", "");
@@ -55,10 +61,24 @@ public class CommentApi {
 
     /** 楼中楼（子评论）。pn 从 1 开始分页，ps=10 */
     public static List<Comment> getSubComments(long oid, long root, int pn) throws IOException, org.json.JSONException {
+        return getSubComments(oid, root, pn, 1);
+    }
+
+    /**
+     * 楼中楼（子评论）。
+     * @param sort 0=按时间 1=按热度
+     */
+    public static List<Comment> getSubComments(long oid, long root, int pn, int sort)
+            throws IOException, org.json.JSONException {
         List<Comment> list = new ArrayList<Comment>();
         String url = "https://api.bilibili.com/x/v2/reply/reply?type=1&oid=" + oid
-                + "&root=" + root + "&ps=10&pn=" + (pn <= 0 ? 1 : pn);
+                + "&root=" + root + "&ps=20&pn=" + (pn <= 0 ? 1 : pn)
+                + "&sort=" + sort;
         JSONObject data = BiliApi.check(HttpUtil.getJson(url));
+        JSONObject page = data.optJSONObject("page");
+        if (page != null) {
+            sLastSubTotal = page.optLong("count", 0);
+        }
         JSONArray replies = data.optJSONArray("replies");
         if (replies == null) {
             return list;
@@ -83,6 +103,13 @@ public class CommentApi {
         if (member != null) {
             c.userName = member.optString("uname", "");
             c.userFace = member.optString("avatar", "");
+            // 用户等级：LV0~LV6（6 级以上统一显示 LV6+）
+            JSONObject lv = member.optJSONObject("level_info");
+            if (lv != null) {
+                c.level = lv.optInt("current_level", 0);
+            } else {
+                c.level = member.optInt("level", 0);
+            }
         }
         JSONObject content = r.optJSONObject("content");
         if (content != null) {
@@ -234,5 +261,32 @@ public class CommentApi {
                 + "&action=" + action + "&csrf=" + HttpUtil.csrf();
         String resp = HttpUtil.postWithLogin("https://api.bilibili.com/x/v2/reply/action", body);
         return new JSONObject(new org.json.JSONTokener(resp)).optInt("code", -1);
+    }
+
+    /**
+     * 旧版分页接口（x/v2/reply）兜底：按 pn 翻页。
+     * 游标接口拿不到 next_offset 时用它继续，避免只显示第一页。
+     */
+    public static List<Comment> getVideoCommentsLegacy(long oid, int sort, int pn, int ps)
+            throws IOException, org.json.JSONException {
+        List<Comment> list = new ArrayList<Comment>();
+        int sortParam = sort == 2 ? 0 : 1; // 0=按时间 1=按热度
+        String url = "https://api.bilibili.com/x/v2/reply?type=1&oid=" + oid
+                + "&pn=" + (pn <= 0 ? 1 : pn) + "&ps=" + (ps <= 0 ? 20 : ps)
+                + "&sort=" + sortParam;
+        JSONObject root = HttpUtil.getJson(url);
+        JSONObject data = BiliApi.check(root);
+        JSONArray replies = data.optJSONArray("replies");
+        if (replies == null) {
+            return list;
+        }
+        JSONObject page = data.optJSONObject("page");
+        if (page != null) {
+            sLastTotal = page.optLong("count", sLastTotal);
+        }
+        for (int i = 0; i < replies.length(); i++) {
+            list.add(parseReply(replies.optJSONObject(i)));
+        }
+        return list;
     }
 }

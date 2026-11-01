@@ -7,6 +7,9 @@
 
     <!-- 基础权限：联网、状态、震动 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -29,8 +32,8 @@
         <!-- 开屏：首次安装做 UI 大小设置、同意利用规约 -->
         <activity
             android:name=".SplashActivity"
-            android:exported="true"
             android:screenOrientation="portrait"
+            android:exported="true"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -42,21 +45,18 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:screenOrientation="portrait" />
+            android:configChanges="keyboardHidden|orientation|screenSize" />
 
         <!-- 搜索 -->
         <activity
             android:name=".SearchActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
             android:windowSoftInputMode="stateHidden|adjustPan" />
 
         <!-- 视频详情（简介/分P/评论/相关视频）；同时承接 B 站分享链接直达 -->
         <activity
             android:name=".VideoDetailActivity"
-            android:exported="true"
-            android:screenOrientation="portrait">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -82,131 +82,111 @@
         <!-- 登录（扫码 / Cookie 导入导出） -->
         <activity
             android:name=".LoginActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
 
         <!-- 个人空间（自己或 UP 主） -->
         <activity
             android:name=".UserActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
 
         <!-- 消息 -->
         <activity
             android:name=".MessageListActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".MessageActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
             android:windowSoftInputMode="stateHidden|adjustResize" />
 
         <!-- 收藏夹 -->
         <activity
             android:name=".FavoriteFolderActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".FavoriteListActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
 
         <!-- 历史 / 稍后再看 / 关注列表 / 动态 -->
         <activity
             android:name=".HistoryActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".SpaceListActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".WatchLaterActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".FollowListActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".DynamicActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
 
         <!-- 下载管理 -->
         <activity
             android:name=".DownloadActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
 
         <!-- 直播间 -->
         <activity
             android:name=".LiveRoomActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
 
         <!-- 评论（视频/动态共用） -->
         <activity
             android:name=".CommentListActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
             android:windowSoftInputMode="stateHidden|adjustResize" />
 
         <!-- 动态详情（动态评论区） -->
         <activity
             android:name=".DynamicDetailActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
             android:windowSoftInputMode="stateHidden|adjustResize" />
 
         <!-- 设置 -->
         <activity
             android:name=".SettingsActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".DecoderSettingsActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".DanmakuSettingsActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".BangumiListActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".BangumiDetailActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
 
         <!-- 关于 / 彩蛋 / 规约 / 设备信息 -->
         <activity
             android:name=".AboutActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".EggActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".EulaActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
+        <activity
+            android:name=".LegalActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ChangelogActivity"
+            android:exported="false" />
         <activity
             android:name=".CollectionListActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
+            android:exported="false" />
         <activity
             android:name=".CompatActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
         <activity
             android:name=".DeviceInfoActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
+            android:exported="true" />
 
         <!-- 视频下载后台服务 -->
         <service
@@ -243,8 +223,11 @@
         </activity>
         <activity
             android:name=".WebActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
+            android:exported="false" />
+
+        <service
+            android:name="com.android.oldbili.retro.notify.NotifyService"
+            android:exported="false" />
 
 </application>
 </manifest>

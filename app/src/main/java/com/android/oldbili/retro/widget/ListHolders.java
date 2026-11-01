@@ -147,7 +147,17 @@ public class ListHolders {
             if (comment == null) {
                 return;
             }
-            name.setText(comment.userName + (comment.isUp ? " (UP)" : ""));
+            // 名字 + 等级（LV0~LV6+，蓝色，参考官方样式：昵称     LV6）
+            String levelLabel = "LV" + (comment.level >= 6
+                    ? "6+" : String.valueOf(Math.max(0, comment.level)));
+            String nameText = comment.userName + (comment.isUp ? " (UP)" : "")
+                    + "    " + levelLabel;
+            android.text.SpannableString ss = new android.text.SpannableString(nameText);
+            int lvStart = nameText.length() - levelLabel.length();
+            ss.setSpan(new android.text.style.ForegroundColorSpan(0xFF33B5E5),
+                    lvStart, nameText.length(),
+                    android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            name.setText(ss);
             like.setText("赞 " + comment.like);
             content.setText(comment.message);
             String timeText = (comment.floor > 0 ? comment.floor + "楼 · " : "") + comment.timeDesc();
@@ -375,9 +385,16 @@ public class ListHolders {
             if (session == null) {
                 return;
             }
+            // 显示名先算好（置顶加「· 置顶」，后面不要再用原名字覆盖）
+            String displayName = session.name != null && session.name.length() > 0
+                    ? session.name : ("用户" + session.uid);
+            if (session.top) {
+                displayName = displayName + "  · 置顶";
+            }
+            name.setTextColor(session.top ? 0xFFFF9800 : 0xFFEDEDED);
             if (session.kind == MessageSession.KIND_FOLLOW_UP) {
                 // 特别关注条目：头像=UP、名字=UP、摘要=视频标题
-                name.setText(session.name.length() > 0 ? session.name : "特别关注");
+                name.setText(displayName);
                 last.setText(session.videoTitle.length() > 0 ? session.videoTitle : "更新了视频");
                 time.setText(session.timeDesc());
                 ImageLoader.get().load(avatar, ImageLoader.avatarUrl(session.face, 96));
@@ -390,8 +407,17 @@ public class ListHolders {
                 });
                 return;
             }
-            name.setText(session.name.length() > 0 ? session.name : "用户" + session.uid);
-            last.setText(session.lastMsg);
+            name.setText(displayName);
+            String preview = session.lastMsg;
+            if (preview == null || preview.length() == 0) {
+                // 折叠/未关注会话接口不下发 last_msg：懒加载真实内容
+                preview = com.android.oldbili.retro.net.MessagePreviewLoader.cached(session.uid);
+                if (preview == null || preview.length() == 0) {
+                    preview = "[消息]";
+                    com.android.oldbili.retro.net.MessagePreviewLoader.load(session.uid, last);
+                }
+            }
+            last.setText(preview);
             time.setText(session.timeDesc());
             ImageLoader.get().load(avatar, ImageLoader.avatarUrl(session.face, 96));
             if (session.unread > 0) {

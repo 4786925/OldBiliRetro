@@ -320,4 +320,6 @@ public class FavoriteFolderActivity extends BaseActivity {
             }
         }).start();
     }
+
+
 }

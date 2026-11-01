@@ -33,6 +33,7 @@ public class SettingsActivity extends PreferenceActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getPreferenceManager().setSharedPreferencesName("oldbili");
+        applyScreenOrientation();
         // 偏好项由 PreferenceActivity 自己 inflate，必须在 addPreferencesFromResource 之前装字体
         com.android.oldbili.retro.util.FontManager.installFactory(this);
         addPreferencesFromResource(R.xml.prefs);
@@ -42,7 +43,17 @@ public class SettingsActivity extends PreferenceActivity {
         // 版本号
         Preference version = findPreference("version");
         if (version != null) {
-            version.setSummary("OldBiliRetro " + DeviceInfoUtil.getAppVersion(this));
+            version.setSummary("OldBiliRetro " + DeviceInfoUtil.getAppVersion(this)
+                    + " · 点击查看更新日志");
+            version.setOnPreferenceClickListener(
+                    new Preference.OnPreferenceClickListener() {
+                        @Override
+                        public boolean onPreferenceClick(Preference preference) {
+                            startActivity(new Intent(SettingsActivity.this,
+                                    ChangelogActivity.class));
+                            return true;
+                        }
+                    });
         }
 
         // 解码设置（参照哔哩终端安卓4.0修复版）
@@ -148,6 +159,95 @@ public class SettingsActivity extends PreferenceActivity {
                     }
                 });
 
+        // 屏幕方向：切换后立即生效
+        try {
+            android.preference.ListPreference ori =
+                    (android.preference.ListPreference) findPreference("set_screen_orientation");
+            if (ori != null) {
+                ori.setSummary(ori.getEntry() == null
+                        ? getString(R.string.set_screen_orientation_desc)
+                        : getString(R.string.set_screen_orientation) + "：" + ori.getEntry());
+                ori.setOnPreferenceChangeListener(
+                        new android.preference.Preference.OnPreferenceChangeListener() {
+                            @Override
+                            public boolean onPreferenceChange(android.preference.Preference p,
+                                                              Object v) {
+                                String mode = String.valueOf(v);
+                                if ("portrait".equals(mode)) {
+                                    setRequestedOrientation(android.content.pm.ActivityInfo
+                                            .SCREEN_ORIENTATION_PORTRAIT);
+                                } else if ("landscape".equals(mode)) {
+                                    setRequestedOrientation(android.content.pm.ActivityInfo
+                                            .SCREEN_ORIENTATION_LANDSCAPE);
+                                } else {
+                                    setRequestedOrientation(android.content.pm.ActivityInfo
+                                            .SCREEN_ORIENTATION_UNSPECIFIED);
+                                }
+                                return true;
+                            }
+                        });
+            }
+        } catch (Throwable ignored) {
+        }
+
+        // 推送通知：总开关联动 + 权限申请
+        try {
+            android.preference.CheckBoxPreference notifyEnable =
+                    (android.preference.CheckBoxPreference) findPreference("notify_enable");
+            if (notifyEnable != null) {
+                notifyEnable.setOnPreferenceChangeListener(
+                        new android.preference.Preference.OnPreferenceChangeListener() {
+                            @Override
+                            public boolean onPreferenceChange(
+                                    android.preference.Preference pref, Object value) {
+                                boolean on = Boolean.TRUE.equals(value);
+                                if (on) {
+                                    com.android.oldbili.retro.notify.NotifyService
+                                            .schedule(SettingsActivity.this);
+                                    com.android.oldbili.retro.notify.NotifyService.schedule(
+                                            SettingsActivity.this);
+                                } else {
+                                    com.android.oldbili.retro.notify.NotifyService
+                                            .cancel(SettingsActivity.this);
+                                }
+                                return true;
+                            }
+                        });
+            }
+            android.preference.Preference permission =
+                    findPreference("notify_permission");
+            if (permission != null) {
+                permission.setOnPreferenceClickListener(
+                        new android.preference.Preference.OnPreferenceClickListener() {
+                            @Override
+                            public boolean onPreferenceClick(
+                                    android.preference.Preference pref) {
+                                requestNotifyPermission();
+                                return true;
+                            }
+                        });
+                updateNotifyPermissionSummary(permission);
+            }
+        } catch (Throwable ignored) {
+        }
+
+        // 法律信息
+        try {
+            Preference legal = findPreference("legal_info");
+            if (legal != null) {
+                legal.setOnPreferenceClickListener(
+                        new Preference.OnPreferenceClickListener() {
+                            @Override
+                            public boolean onPreferenceClick(Preference p) {
+                                startActivity(new Intent(SettingsActivity.this,
+                                        LegalActivity.class));
+                                return true;
+                            }
+                        });
+            }
+        } catch (Exception ignored) {
+        }
+
         // 兼容性列表（放在利用规约上面）
         findPreference("compat").setOnPreferenceClickListener(
                 new Preference.OnPreferenceClickListener() {
@@ -204,7 +304,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void confirmClearCache() {
         new AlertDialog.Builder(this)
                 .setTitle("清除缓存")
-                .setMessage("将清理图片缓存、消息/动态缓存和临时文件，确定继续吗？")
+                .setMessage("将清理图片缓存、消息与动态的文字缓存（会话列表/动态列表/昵称头像）、临时文件，\n不影响登录状态与置顶设置。确定继续吗？")
                 .setPositiveButton("清除", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -212,6 +312,14 @@ public class SettingsActivity extends PreferenceActivity {
                         toast("缓存已清除");
                     }
                 })
+                .setNeutralButton("查看更新内容",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface d, int w) {
+                                startActivity(new Intent(SettingsActivity.this,
+                                        ChangelogActivity.class));
+                            }
+                        })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
     }
@@ -455,4 +563,62 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
+
+    private void applyScreenOrientation() {
+        try {
+            String mode = com.android.oldbili.retro.util.Sp.getString(
+                    com.android.oldbili.retro.util.Sp.SET_SCREEN_ORIENTATION, "auto");
+            if ("portrait".equals(mode)) {
+                setRequestedOrientation(
+                        android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            } else if ("landscape".equals(mode)) {
+                setRequestedOrientation(
+                        android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+
+    /** 安卓 13+ 申请通知权限；低版本直接提示已开启 */
+    private void requestNotifyPermission() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1001);
+            } else {
+                toast("当前系统无需单独授权，去系统设置里确认通知未被关闭即可");
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void updateNotifyPermissionSummary(android.preference.Preference pref) {
+        try {
+            String state = "点此查看";
+            if (android.os.Build.VERSION.SDK_INT >= 24) {
+                try {
+                    android.app.NotificationManager nm =
+                            (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                    Object enabled = nm == null ? null : android.app.NotificationManager.class
+                            .getMethod("areNotificationsEnabled").invoke(nm);
+                    state = Boolean.TRUE.equals(enabled)
+                            ? "通知已开启" : "通知已关闭，点此去申请";
+                } catch (Throwable ignored) {
+                    state = "点此查看";
+                }
+            }
+            pref.setSummary(state);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1001) {
+            toast(grantResults != null && grantResults.length > 0 && grantResults[0] == 0
+                    ? "通知已允许" : "未允许通知，将收不到消息提醒");
+        }
+    }
 }

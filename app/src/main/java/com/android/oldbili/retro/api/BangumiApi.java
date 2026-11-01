@@ -21,13 +21,37 @@ public class BangumiApi {
     /** 追番/追剧列表（风控时自动改走 WBI 签名版） */
     public static List<BangumiCard> getFollowList(long vmid, int type, int page)
             throws java.io.IOException, org.json.JSONException {
-        String url = "https://api.bilibili.com/x/space/bangumi/follow/list?type=" + type
+        // 基础 URL 只构建一次；签名必须基于「未签名」的 URL，
+        // 否则重复签名（wts/w_rid 出现两次）会直接返回 -400
+        String baseUrl = "https://api.bilibili.com/x/space/bangumi/follow/list?type=" + type
                 + "&vmid=" + vmid + "&pn=" + page + "&ps=15";
-        JSONObject data;
+        JSONObject data = null;
+        Exception lastError = null;
+        // 这个接口不需要 wbi 签名（带了反而 -400）：先试原样，再降级到签名版
         try {
-            data = BiliApi.check(HttpUtil.getJson(url));
-        } catch (Exception first) {
-            data = BiliApi.check(HttpUtil.getJson(BiliApi.signWbi(url)));
+            data = BiliApi.check(HttpUtil.getJson(baseUrl));
+        } catch (Exception e0) {
+            lastError = e0;
+        }
+        if (data == null) {
+            try {
+                data = BiliApi.check(HttpUtil.getJson(BiliApi.signWbi(baseUrl)));
+            } catch (Exception e1) {
+                lastError = e1;
+                android.util.Log.w("BangumiApi", "follow/list wbi 签名失败: " + e1.getMessage());
+            }
+        }
+        if (data == null) {
+            try {
+                data = BiliApi.check(HttpUtil.getJson(BiliApi.signWbiWithDm(baseUrl)));
+            } catch (Exception e2) {
+                lastError = e2;
+                android.util.Log.w("BangumiApi", "follow/list dm 签名失败: " + e2.getMessage());
+            }
+        }
+        if (data == null) {
+            throw new java.io.IOException(lastError != null
+                    ? String.valueOf(lastError.getMessage()) : "追番列表加载失败");
         }
         List<BangumiCard> list = new ArrayList<BangumiCard>();
         JSONArray items = data.optJSONArray("list");

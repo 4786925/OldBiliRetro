@@ -102,6 +102,13 @@ public class DownloadActivity extends BaseActivity {
         });
 
         // 批量删除（二次确认）
+        findViewById(R.id.btn_batch_rename).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showRenameDialog();
+            }
+        });
+
         findViewById(R.id.btn_batch_delete).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -481,6 +488,83 @@ public class DownloadActivity extends BaseActivity {
 
     // ==================== 列表适配器 ====================
 
+    // ==================== 批量重命名 ====================
+
+    private void showRenameDialog() {
+        final java.util.List<DownloadTask> tasks = selectedTasks();
+        if (tasks.isEmpty()) {
+            toast(R.string.download_batch_none);
+            return;
+        }
+        final String[] items = new String[]{
+                "UP主 - 标题",
+                "标题",
+                "自定义前缀 + 序号"
+        };
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("重命名 " + tasks.size() + " 个文件")
+                .setItems(items, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int which) {
+                        if (which == 2) {
+                            askPrefix(tasks);
+                        } else {
+                            applyRename(tasks, which == 0 ? 0 : 1, null);
+                        }
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void askPrefix(final java.util.List<DownloadTask> tasks) {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setHint("前缀，例如：周杰伦 - ");
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("自定义前缀")
+                .setView(input)
+                .setPositiveButton("确定", new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int w) {
+                        applyRename(tasks, 2, input.getText().toString());
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    /**
+     * @param mode 0=UP主-标题 1=标题 2=前缀+序号
+     */
+    private void applyRename(java.util.List<DownloadTask> tasks, int mode, String prefix) {
+        DownloadManager manager = DownloadManager.get(this);
+        for (int i = 0; i < tasks.size(); i++) {
+            DownloadTask t = tasks.get(i);
+            String base;
+            if (mode == 0) {
+                String up = DownloadManager.sanitize(t.upName);
+                String title = DownloadManager.sanitize(t.title
+                        + (t.part != null && t.part.length() > 0 ? " - " + t.part : ""));
+                base = up.length() > 0 ? up + " - " + title : title;
+            } else if (mode == 1) {
+                base = DownloadManager.sanitize(t.title
+                        + (t.part != null && t.part.length() > 0 ? " - " + t.part : ""));
+            } else {
+                String p = prefix == null ? "" : prefix;
+                base = DownloadManager.sanitize(p + String.format("%02d", i + 1));
+            }
+            if (base.length() == 0) {
+                base = "video";
+            }
+            String name = base + " [" + (t.qualityName == null ? "" : t.qualityName) + "].mp4";
+            manager.renameTask(t, name);
+        }
+        toast("已重命名 " + tasks.size() + " 个文件");
+        mSelected.clear();
+        setMultiMode(false);
+        refreshView();
+    }
+
     private class TaskAdapter extends BaseAdapter {
 
         private List<DownloadTask> mTasks;
@@ -565,4 +649,5 @@ public class DownloadActivity extends BaseActivity {
             return convertView;
         }
     }
+
 }

@@ -106,4 +106,29 @@
         <item>system</item>
         <item>kai</item>
     </string-array>
+
+    <string-array name="orientation_entries">
+        <item>跟随系统（自动旋转）</item>
+        <item>强制竖屏</item>
+        <item>强制横屏</item>
+    </string-array>
+    <string-array name="orientation_values">
+        <item>auto</item>
+        <item>portrait</item>
+        <item>landscape</item>
+    </string-array>
+    <string-array name="download_speed_entries">
+        <item>不限速</item>
+        <item>512 KB/s</item>
+        <item>1 MB/s</item>
+        <item>2 MB/s</item>
+        <item>4 MB/s</item>
+    </string-array>
+    <string-array name="download_speed_values">
+        <item>0</item>
+        <item>512</item>
+        <item>1024</item>
+        <item>2048</item>
+        <item>4096</item>
+    </string-array>
 </resources>

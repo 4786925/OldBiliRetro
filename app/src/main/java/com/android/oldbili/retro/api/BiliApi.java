@@ -239,4 +239,18 @@ public class BiliApi {
         }
         return sb.toString();
     }
+
+    /**
+     * 空间类接口专用：带 dm_img 风控参数后再做 WBI 签名。
+     * B 站对 /x/space/* 校验这些参数，缺了会返回 -352 风控校验失败。
+     */
+    public static String signWbiWithDm(String urlWithQuery) throws IOException, org.json.JSONException {
+        String sep = urlWithQuery.indexOf('?') >= 0 ? "&" : "?";
+        String url = urlWithQuery + sep
+                + "dm_img_list=" + com.android.oldbili.retro.net.HttpUtil.encode("[]")
+                + "&dm_img_str=V2ViR0wgMS4wIChPcGVuR0wgRVMgMi4wIENocm9taXVtKQ"
+                + "&dm_cover_img_str=QU5HTEUgKEludGVsLCBJbnRlbChSKSBVSEQgR3JhcGhpY3MgNjMwICgweDAwMDAzRTlCKSBEaXJlY3QzRDExIHZzXzVfMCBwc181XzApR29vZ2xlIEluYy4gKEludGVsKQ"
+                + "&web_location=333.999";
+        return signWbi(url);
+    }
 }

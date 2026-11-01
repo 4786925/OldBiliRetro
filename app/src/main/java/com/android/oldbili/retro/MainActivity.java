@@ -33,6 +33,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupNotify();
         setShowBack(false);
         setContentView(R.layout.activity_main);
 
@@ -139,6 +140,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        openFromNotification();
         // 登录状态可能变了，回到主界面刷新当前页
         switch (mCurrentTab) {
             case 0:
@@ -171,4 +173,87 @@ public class MainActivity extends BaseActivity {
     }
 
 
+
+    /** 推送通知：排程 + 安卓 13+ 首次启动申请权限 */
+    private void setupNotify() {
+        try {
+            if (!com.android.oldbili.retro.util.Sp.getBoolean(
+                    com.android.oldbili.retro.util.Sp.SET_NOTIFY_ENABLE, true)) {
+                return;
+            }
+            com.android.oldbili.retro.notify.NotifyService.schedule(this);
+            // 打开应用时立刻检查一次（等同于立刻收到提醒）
+            startService(new android.content.Intent(this,
+                    com.android.oldbili.retro.notify.NotifyService.class));
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                boolean asked = com.android.oldbili.retro.util.Sp.getBoolean("notify_asked", false);
+                if (!asked) {
+                    com.android.oldbili.retro.util.Sp.putBoolean("notify_asked", true);
+                    requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1001);
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** 从通知栏点进来：跳到对应评论 / 私信 / 点赞内容 */
+    private void openFromNotification() {
+        // 也支持通过 Intent 直接指定（便于测试/外部唤起）
+        try {
+            android.content.Intent in = getIntent();
+            if (in != null && in.hasExtra("notify_kind")) {
+                com.android.oldbili.retro.util.Sp.putString("notify_kind",
+                        in.getStringExtra("notify_kind"));
+                com.android.oldbili.retro.util.Sp.putLong("notify_oid",
+                        in.getLongExtra("notify_oid", 0));
+                com.android.oldbili.retro.util.Sp.putLong("notify_root",
+                        in.getLongExtra("notify_root", 0));
+                com.android.oldbili.retro.util.Sp.putLong("notify_sub",
+                        in.getLongExtra("notify_sub", 0));
+                com.android.oldbili.retro.util.Sp.putLong("notify_uid",
+                        in.getLongExtra("notify_uid", 0));
+                com.android.oldbili.retro.util.Sp.putString("notify_uri",
+                        in.getStringExtra("notify_uri"));
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            String kind = com.android.oldbili.retro.util.Sp.getString("notify_kind", "");
+            if (kind == null || kind.length() == 0) {
+                return;
+            }
+            com.android.oldbili.retro.util.Sp.putString("notify_kind", "");
+            long oid = com.android.oldbili.retro.util.Sp.getLong("notify_oid", 0);
+            long root = com.android.oldbili.retro.util.Sp.getLong("notify_root", 0);
+            long sub = com.android.oldbili.retro.util.Sp.getLong("notify_sub", 0);
+            long uid = com.android.oldbili.retro.util.Sp.getLong("notify_uid", 0);
+            String uri = com.android.oldbili.retro.util.Sp.getString("notify_uri", "");
+
+            if ("reply".equals(kind) && oid > 0) {
+                android.content.Intent i = new android.content.Intent(this,
+                        CommentListActivity.class);
+                i.putExtra("oid", oid);
+                i.putExtra("highlight_rpid", root);
+                i.putExtra("highlight_sub_rpid", sub);
+                startActivity(i);
+                return;
+            }
+            if ("chat".equals(kind) && uid > 0) {
+                android.content.Intent i = new android.content.Intent(this,
+                        MessageActivity.class);
+                i.putExtra("uid", uid);
+                i.putExtra("name", com.android.oldbili.retro.util.Sp.getString("notify_name", ""));
+                i.putExtra("face", com.android.oldbili.retro.util.Sp.getString("notify_face", ""));
+                startActivity(i);
+                return;
+            }
+            if ("uri".equals(kind) && uri != null && uri.length() > 0) {
+                android.content.Intent i = new android.content.Intent(
+                        android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri));
+                i.setClass(this, UrlOpenActivity.class);
+                startActivity(i);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
 }

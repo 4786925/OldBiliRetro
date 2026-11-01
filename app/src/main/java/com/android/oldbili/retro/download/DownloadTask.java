@@ -17,6 +17,8 @@ public class DownloadTask {
     public String title = "";
     public String part = "";
     public String cover = "";
+    /** UP 主昵称（按 UP 建文件夹 / 重命名用） */
+    public String upName = "";
     public int qn;             // 清晰度 qn 值
     public String qualityName = "";
     public boolean saveCover;

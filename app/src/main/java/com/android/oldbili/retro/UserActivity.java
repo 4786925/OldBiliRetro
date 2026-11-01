@@ -34,6 +34,7 @@ public class UserActivity extends BaseActivity {
     private static final int TAB_VIDEOS = 0;
     private static final int TAB_DYNAMIC = 1;
     private static final int TAB_INTRO = 2;
+    private static final int TAB_FAV = 3;
 
     private long mMid;
     private String mName = "";
@@ -41,11 +42,15 @@ public class UserActivity extends BaseActivity {
     private int mRelation;
     private int mBeRelation;
     private int mTab = TAB_VIDEOS;
+    /** 各 tab 独立滚动位置：下标=tab */
+    private final int[] mTabScrollPos = new int[]{0, 0, 0, 0};
+    private final int[] mTabScrollTop = new int[]{0, 0, 0, 0};
 
     private ListPage mListPage;
     private TextView mTabVideos;
     private TextView mTabDynamic;
     private TextView mTabIntro;
+    private TextView mTabFav;
     private Button mBtnFollow;
     private Button mBtnMessage;
     private View mIntroScroll;
@@ -58,6 +63,9 @@ public class UserActivity extends BaseActivity {
     private final List<DynamicItem> mDynamics = new ArrayList<DynamicItem>();
     private boolean mVideoTabLoaded;
     private boolean mDynamicTabLoaded;
+    private boolean mFavTabLoaded;
+    private final java.util.List<com.android.oldbili.retro.model.FavoriteFolder> mFolders =
+            new java.util.ArrayList<com.android.oldbili.retro.model.FavoriteFolder>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,7 +86,8 @@ public class UserActivity extends BaseActivity {
         mName = getIntent().getStringExtra("name");
         setTitle(mName != null && mName.length() > 0 ? mName : "个人空间");
         int startTab = getIntent().getIntExtra("tab", -1);
-        if (startTab == TAB_VIDEOS || startTab == TAB_DYNAMIC || startTab == TAB_INTRO) {
+        if (startTab == TAB_VIDEOS || startTab == TAB_DYNAMIC
+                || startTab == TAB_INTRO || startTab == TAB_FAV) {
             mTab = startTab;
         }
 
@@ -86,6 +95,7 @@ public class UserActivity extends BaseActivity {
         mTabVideos = (TextView) findViewById(R.id.tab_videos);
         mTabDynamic = (TextView) findViewById(R.id.tab_dynamic);
         mTabIntro = (TextView) findViewById(R.id.tab_intro);
+        mTabFav = (TextView) findViewById(R.id.tab_fav);
         // 分享个人空间：https://space.bilibili.com/<UID>
         findViewById(R.id.btn_share_space).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -139,6 +149,12 @@ public class UserActivity extends BaseActivity {
             @Override
             public void onClick(View v) {
                 switchTab(TAB_DYNAMIC);
+            }
+        });
+        mTabFav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchTab(TAB_FAV);
             }
         });
         mTabIntro.setOnClickListener(new View.OnClickListener() {
@@ -463,17 +479,34 @@ public class UserActivity extends BaseActivity {
     }
 
     private void switchTab(int tab) {
+        // 切走前保存当前 tab 的滚动位置
+        saveTabScroll();
         mTab = tab;
         mTabVideos.setTextColor(tab == TAB_VIDEOS ? 0xFF33B5E5 : 0xFFB3B3B3);
         mTabDynamic.setTextColor(tab == TAB_DYNAMIC ? 0xFF33B5E5 : 0xFFB3B3B3);
         mTabIntro.setTextColor(tab == TAB_INTRO ? 0xFF33B5E5 : 0xFFB3B3B3);
+        if (mTabFav != null) {
+            mTabFav.setTextColor(tab == TAB_FAV ? 0xFF33B5E5 : 0xFFB3B3B3);
+        }
         mIntroScroll.setVisibility(tab == TAB_INTRO ? View.VISIBLE : View.GONE);
-        findViewById(R.id.user_list).setVisibility(tab == TAB_INTRO ? View.GONE : View.VISIBLE);
+        findViewById(R.id.user_list).setVisibility(
+                tab == TAB_INTRO ? View.GONE : View.VISIBLE);
 
         if (tab == TAB_INTRO) {
             ((TextView) findViewById(R.id.intro_text)).setText(
                     mUser != null && mUser.sign != null && mUser.sign.length() > 0
                             ? mUser.sign : "这个人很懒，什么都没写");
+            return;
+        }
+        if (tab == TAB_FAV) {
+            if (!mFavTabLoaded) {
+                mFavTabLoaded = true;
+                mListPage.showLoading("加载中…");
+                loadFavFolders();
+            } else {
+                bindFolders();
+            }
+            restoreTabScroll(tab);
             return;
         }
         if (tab == TAB_VIDEOS) {
@@ -494,6 +527,38 @@ public class UserActivity extends BaseActivity {
                 mListPage.setAdapter(new ListAdapters.DynamicList(this, mDynamics));
                 mListPage.showContent();
             }
+        }
+        restoreTabScroll(tab);
+    }
+
+    private void saveTabScroll() {
+        try {
+            if (mTab < 0 || mTab >= mTabScrollPos.length || mListPage == null) {
+                return;
+            }
+            mTabScrollPos[mTab] = mListPage.getListView().getFirstVisiblePosition();
+            android.view.View child = mListPage.getListView().getChildAt(0);
+            mTabScrollTop[mTab] = child == null ? 0 : child.getTop();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void restoreTabScroll(final int tab) {
+        try {
+            if (tab < 0 || tab >= mTabScrollPos.length || mTabScrollPos[tab] <= 0) {
+                return;
+            }
+            mListPage.getListView().post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        mListPage.getListView().setSelectionFromTop(
+                                mTabScrollPos[tab], mTabScrollTop[tab]);
+                    } catch (Throwable ignored) {
+                    }
+                }
+            });
+        } catch (Throwable ignored) {
         }
     }
 
@@ -606,6 +671,70 @@ public class UserActivity extends BaseActivity {
         } catch (Exception e) {
             com.android.oldbili.retro.util.ClipboardCompat.copyOrShow(
                     UserActivity.this, url, "链接已复制");
+        }
+    }
+
+    // ==================== 收藏（空间页第三个 tab） ====================
+
+    private void loadFavFolders() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final java.util.List<com.android.oldbili.retro.model.FavoriteFolder> folders =
+                            com.android.oldbili.retro.api.FavoriteApi.getFolders(mMid);
+                    runOnUi(new Runnable() {
+                        @Override
+                        public void run() {
+                            mFolders.clear();
+                            if (folders != null) {
+                                mFolders.addAll(folders);
+                            }
+                            bindFolders();
+                        }
+                    });
+                } catch (final Exception e) {
+                    runOnUi(new Runnable() {
+                        @Override
+                        public void run() {
+                            mListPage.showError("收藏夹加载失败：" + e.getMessage(),
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mFavTabLoaded = false;
+                                            switchTab(TAB_FAV);
+                                        }
+                                    });
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void bindFolders() {
+        mListPage.setAdapter(new ListAdapters.FolderList(this, mFolders));
+        mListPage.finishLoadMore(false);
+        mListPage.setOnItemClick(new android.widget.AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(android.widget.AdapterView<?> parent, android.view.View view,
+                                    int position, long id) {
+                int idx = position - mListPage.getListView().getHeaderViewsCount();
+                if (idx < 0 || idx >= mFolders.size()) {
+                    return;
+                }
+                com.android.oldbili.retro.model.FavoriteFolder folder = mFolders.get(idx);
+                Intent intent = new Intent(UserActivity.this, FavoriteListActivity.class);
+                intent.putExtra("up_mid", mMid);
+                intent.putExtra("folder_id", folder.id);
+                intent.putExtra("title", folder.title);
+                startActivity(intent);
+            }
+        });
+        if (mFolders.isEmpty()) {
+            mListPage.showEmpty("还没有公开收藏夹");
+        } else {
+            mListPage.showContent();
         }
     }
 }

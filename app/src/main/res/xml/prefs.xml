@@ -2,15 +2,60 @@
 <!-- 设置页：各个接口/播放/下载的开关都在这里 -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+
+
+    <PreferenceCategory android:title="推送通知">
+        <CheckBoxPreference
+            android:key="notify_enable"
+            android:title="开启消息通知"
+            android:summary="后台每 15 分钟检查一次，收到新消息时在通知栏提醒"
+            android:defaultValue="true" />
+
+        <CheckBoxPreference
+            android:key="notify_interact"
+            android:title="互动通知"
+            android:summary="点赞、评论、@我、私信"
+            android:defaultValue="true" />
+
+        <CheckBoxPreference
+            android:key="notify_follow"
+            android:title="关注通知"
+            android:summary="关注的 UP 主更新提醒"
+            android:defaultValue="true" />
+
+        <CheckBoxPreference
+            android:key="notify_recommend"
+            android:title="内容推荐"
+            android:summary="推荐热点"
+            android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="notify_subscribe"
+            android:title="订阅/预约通知"
+            android:summary="追番追剧、订阅合集更新提醒"
+            android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="notify_other"
+            android:title="其他通知"
+            android:summary="账号安全等系统通知"
+            android:defaultValue="false" />
+
+        <Preference
+            android:key="notify_permission"
+            android:title="通知权限"
+            android:summary="安卓 13 及以上需要允许通知才能收到提醒，点此申请" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="通用">
-        <ListPreference
+        <com.android.oldbili.retro.widget.SafeListPreference
             android:key="set_home_default"
             android:title="首页默认页"
             android:summary="未登录时首页显示的内容"
             android:entries="@array/home_default_entries"
             android:entryValues="@array/home_default_values"
             android:defaultValue="popular" />
-        <ListPreference
+        <com.android.oldbili.retro.widget.SafeListPreference
             android:key="set_recommend_source"
             android:title="推荐源"
             android:summary="登录后首页推荐使用的接口"
@@ -22,14 +67,14 @@
             android:title="显示直播入口"
             android:summary="首页顶部是否显示直播栏"
             android:defaultValue="true" />
-        <ListPreference
+        <com.android.oldbili.retro.widget.SafeListPreference
             android:key="set_image_quality"
             android:title="图片质量"
             android:summary="老设备建议标清，省流量省内存"
             android:entries="@array/image_quality_entries"
             android:entryValues="@array/image_quality_values"
             android:defaultValue="true" />
-        <ListPreference
+        <com.android.oldbili.retro.widget.SafeListPreference
             android:key="set_comment_sort"
             android:title="评论排序"
             android:summary="评论列表默认排列方式"
@@ -41,6 +86,14 @@
             android:title="无痕模式"
             android:summary="开启后请求不携带登录信息"
             android:defaultValue="false" />
+        <com.android.oldbili.retro.widget.SafeListPreference
+            android:key="set_screen_orientation"
+            android:defaultValue="auto"
+            android:entries="@array/orientation_entries"
+            android:entryValues="@array/orientation_values"
+            android:title="@string/set_screen_orientation"
+            android:summary="@string/set_screen_orientation_desc" />
+
         <CheckBoxPreference
             android:key="set_low_image"
             android:title="无图模式"
@@ -61,14 +114,14 @@
             android:key="danmaku_settings"
             android:title="弹幕设置"
             android:summary="弹幕开关 / 字号 / 透明度 / 行数等" />
-        <ListPreference
+        <com.android.oldbili.retro.widget.SafeListPreference
             android:key="set_stream_format"
             android:title="播放流格式"
             android:summary="DASH：高清晰度全档（480P~2K）；MP4：单流最稳（360P/720P）"
             android:entries="@array/stream_format_entries"
             android:entryValues="@array/stream_format_values"
             android:defaultValue="dash" />
-        <ListPreference
+        <com.android.oldbili.retro.widget.SafeListPreference
             android:key="set_default_quality"
             android:title="默认清晰度"
             android:entries="@array/quality_entries"
@@ -89,12 +142,25 @@
             android:key="set_download_cover"
             android:title="下载时保存封面"
             android:defaultValue="false" />
-        <ListPreference
+        <com.android.oldbili.retro.widget.SafeListPreference
             android:key="set_download_quality"
             android:title="下载默认清晰度"
             android:entries="@array/quality_entries"
             android:entryValues="@array/quality_values"
             android:defaultValue="16" />
+    <com.android.oldbili.retro.widget.SafeListPreference
+            android:key="set_download_speed"
+            android:defaultValue="0"
+            android:entries="@array/download_speed_entries"
+            android:entryValues="@array/download_speed_values"
+            android:title="@string/set_download_speed"
+            android:summary="@string/set_download_speed_desc" />
+
+        <CheckBoxPreference
+            android:key="set_download_by_up"
+            android:defaultValue="false"
+            android:title="@string/set_download_by_up"
+            android:summary="@string/set_download_by_up_desc" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="账号">
@@ -123,6 +189,11 @@
             android:key="compat"
             android:title="兼容性列表"
             android:summary="查看各架构/系统版本/清晰度支持情况" />
+        <Preference
+            android:key="legal_info"
+            android:title="法律信息"
+            android:summary="列明涉及的法律法规与免责声明" />
+
         <Preference
             android:key="eula"
             android:title="利用规约" />

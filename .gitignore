@@ -31,3 +31,5 @@ desktop.ini
 
 # third-party reference sources (not published)
 ref/
+dist/
+app/build/

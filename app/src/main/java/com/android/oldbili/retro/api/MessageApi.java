@@ -44,6 +44,8 @@ public class MessageApi {
             session.kind = MessageSession.KIND_CHAT;
             session.uid = s.optLong("talker_id", 0);
             session.unread = s.optInt("unread_count", 0);
+            // 服务端置顶：top_ts 是微秒时间戳，非 0 表示置顶
+            session.top = s.optLong("top_ts", 0) > 0;
             JSONObject acc = s.optJSONObject("account_info");
             if (acc != null) {
                 session.name = acc.optString("name", "");

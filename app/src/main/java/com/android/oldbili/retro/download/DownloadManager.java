@@ -49,6 +49,40 @@ public class DownloadManager {
         loadTasks();
     }
 
+    // ==================== 目录（可选按 UP 主分子文件夹） ====================
+
+    private DownloadPathUtil.Folder folderFor(DownloadTask task) throws Exception {
+        DownloadPathUtil.Folder base = DownloadPathUtil.resolve(mContext);
+        try {
+            if (Sp.getBoolean(Sp.SET_DOWNLOAD_BY_UP, false)
+                    && task.upName != null && task.upName.length() > 0) {
+                DownloadPathUtil.Folder sub = base.subFolder(sanitizeName(task.upName));
+                if (sub != null) {
+                    return sub;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return base;
+    }
+
+    public static String sanitize(String s) {
+        return sanitizeName(s);
+    }
+
+    private static String sanitizeName(String s) {
+        if (s == null) {
+            return "";
+        }
+        String out = s.replace('/', '_').replace('\\', '_').replace(':', '_')
+                .replace('*', '_').replace('?', '_').replace('"', '_')
+                .replace('<', '_').replace('>', '_').replace('|', '_').trim();
+        if (out.length() > 40) {
+            out = out.substring(0, 40);
+        }
+        return out;
+    }
+
     // ==================== 任务管理 ====================
 
     public synchronized List<DownloadTask> getTasks() {
@@ -68,7 +102,16 @@ public class DownloadManager {
     /** 新建下载任务（一个分P）并立即开始排队 */
     public synchronized DownloadTask addTask(long aid, String bvid, long cid, String title,
                                              String part, int partIndex, String cover, int qn,
-                                             String qualityName, boolean saveCover, String coverLevel) {
+                                             String qualityName, boolean saveCover,
+                                             String coverLevel) {
+        return addTask(aid, bvid, cid, title, part, partIndex, cover, qn,
+                qualityName, saveCover, coverLevel, "");
+    }
+
+    public synchronized DownloadTask addTask(long aid, String bvid, long cid, String title,
+                                             String part, int partIndex, String cover, int qn,
+                                             String qualityName, boolean saveCover,
+                                             String coverLevel, String upName) {
         DownloadTask task = new DownloadTask();
         task.aid = aid;
         task.bvid = bvid;
@@ -80,6 +123,7 @@ public class DownloadManager {
         task.qualityName = qualityName;
         task.saveCover = saveCover;
         task.coverLevel = coverLevel;
+        task.upName = upName == null ? "" : upName;
         task.fileName = "av" + aid
                 + (partIndex > 0 ? "_P" + (partIndex + 1) : "")
                 + "_" + qualityName.replace(" ", "") + ".mp4";
@@ -114,7 +158,7 @@ public class DownloadManager {
         mTasks.remove(task);
         persist();
         try {
-            DownloadPathUtil.Folder folder = DownloadPathUtil.resolve(mContext);
+            DownloadPathUtil.Folder folder = folderFor(task);
             folder.delete(task.fileName);
             folder.delete(task.fileName + ".part");
             if (task.saveCover && task.coverName.length() > 0) {
@@ -209,7 +253,7 @@ public class DownloadManager {
 
     private void runTask(final DownloadTask task) {
         try {
-            DownloadPathUtil.Folder folder = DownloadPathUtil.resolve(mContext);
+            DownloadPathUtil.Folder folder = folderFor(task);
             if (folder instanceof DownloadPathUtil.FileFolder) {
                 File dir = DownloadPathUtil.getPublicDownloadsDir();
                 if (!dir.exists()) {
@@ -246,11 +290,12 @@ public class DownloadManager {
 
             // 断点续传：写入 .part，完成后改名正式文件
             final String partName = task.fileName + ".part";
-            long startByte = folder.length(partName);
             boolean done = false;
             Exception lastError = null;
             for (int ci = 0; ci < ordered.size(); ci++) {
                 String videoUrl = ordered.get(ci);
+                // 每条线路都按 .part 当前大小续传（不再丢进度）
+                long startByte = folder.length(partName);
                 OutputStream out = null;
                 try {
                     out = folder.openOutputStream(partName, startByte > 0);
@@ -265,7 +310,6 @@ public class DownloadManager {
                     lastError = e;
                     android.util.Log.w("Download", "线路[" + ci + "]失败: " + e.getMessage()
                             + " -> " + videoUrl.substring(0, Math.min(70, videoUrl.length())));
-                    // 换线路时丢弃半截文件，重新从 0 开始
                     try {
                         if (out != null) {
                             out.close();
@@ -273,11 +317,14 @@ public class DownloadManager {
                     } catch (Exception ignored) {
                     }
                     out = null;
-                    try {
-                        folder.delete(partName);
-                    } catch (Exception ignored) {
+                    // 服务器忽略了 Range（返回 200 从头传）：清空重来，并重试同一条线路
+                    if (e.getMessage() != null && e.getMessage().contains("RANGE_IGNORED")) {
+                        try {
+                            folder.delete(partName);
+                        } catch (Exception ignored) {
+                        }
+                        ci--;
                     }
-                    startByte = 0;
                 } finally {
                     try {
                         if (out != null) {
@@ -309,13 +356,12 @@ public class DownloadManager {
             task.state = DownloadTask.STATE_DONE;
             persist();
             notifyChanged(task);
+            try {
+                DownloadNotifier.notifyDone(mContext, task, folder.pathOf(task.fileName));
+            } catch (Throwable ignored) {
+            }
         } catch (Exception e) {
             android.util.Log.w("Download", "下载失败: " + e.getMessage());
-            try {
-                DownloadPathUtil.Folder folder = DownloadPathUtil.resolve(mContext);
-                folder.delete(task.fileName + ".part");
-            } catch (Exception ignored) {
-            }
             // 暂停状态不要覆盖成失败（用户主动暂停不算失败）
             if (task.state != DownloadTask.STATE_PAUSED) {
                 task.state = DownloadTask.STATE_FAILED;
@@ -351,6 +397,10 @@ public class DownloadManager {
                 conn.setRequestProperty("Range", "bytes=" + startByte + "-");
             }
             int code = conn.getResponseCode();
+            if (code == 200 && startByte > 0) {
+                // 服务器不支持 Range：必须从头下，交给调用方清空 .part 后重试
+                throw new java.io.IOException("RANGE_IGNORED");
+            }
             if (code != 200 && code != 206) {
                 throw new java.io.IOException("HTTP " + code);
             }
@@ -363,6 +413,11 @@ public class DownloadManager {
             byte[] buf = new byte[16384];
             long done = startByte;
             int n;
+            // 下载限速（0=不限速），避免老设备把带宽占满
+            final long limitBytes = Math.max(0,
+                    (long) Sp.getInt(Sp.SET_DOWNLOAD_SPEED, 0)) * 1024L;
+            long throttleStart = android.os.SystemClock.elapsedRealtime();
+            long throttleBytes = 0;
             while ((n = in.read(buf)) != -1) {
                 if (task.state != DownloadTask.STATE_DOWNLOADING) {
                     // 被暂停：留好进度直接退出
@@ -374,6 +429,17 @@ public class DownloadManager {
                     return false;
                 }
                 out.write(buf, 0, n);
+                if (limitBytes > 0) {
+                    throttleBytes += n;
+                    long expectedMs = throttleBytes * 1000L / limitBytes;
+                    long actualMs = android.os.SystemClock.elapsedRealtime() - throttleStart;
+                    if (expectedMs > actualMs) {
+                        try {
+                            Thread.sleep(expectedMs - actualMs);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                }
                 done += n;
                 task.progress = done;
                 long now = System.currentTimeMillis();
@@ -435,6 +501,7 @@ public class DownloadManager {
                 o.put("cid", t.cid);
                 o.put("title", t.title);
                 o.put("part", t.part);
+            o.put("up", t.upName);
                 o.put("cover", t.cover);
                 o.put("qn", t.qn);
                 o.put("qualityName", t.qualityName);
@@ -470,6 +537,7 @@ public class DownloadManager {
                 t.cid = o.optLong("cid", 0);
                 t.title = o.optString("title", "");
                 t.part = o.optString("part", "");
+            t.upName = o.optString("up", "");
                 t.cover = o.optString("cover", "");
                 t.qn = o.optInt("qn", 16);
                 t.qualityName = o.optString("qualityName", "");
@@ -487,6 +555,35 @@ public class DownloadManager {
                 mTasks.add(t);
             }
         } catch (Exception ignored) {
+        }
+    }
+
+    /** 重命名任务文件（.mp4 与 .part 一起改），并持久化 */
+    public synchronized void renameTask(DownloadTask task, String newFileName) {
+        if (task == null || newFileName == null || newFileName.length() == 0) {
+            return;
+        }
+        if (newFileName.equals(task.fileName)) {
+            return;
+        }
+        try {
+            DownloadPathUtil.Folder folder = folderFor(task);
+            folder.rename(task.fileName, newFileName);
+            folder.rename(task.fileName + ".part", newFileName + ".part");
+        } catch (Exception ignored) {
+        }
+        task.fileName = newFileName;
+        persist();
+        notifyChanged(task);
+    }
+
+    /** 批量重命名：prefix 为空时用默认规则 */
+    public synchronized void renameBatch(java.util.List<DownloadTask> tasks, String newName) {
+        if (tasks == null) {
+            return;
+        }
+        for (int i = 0; i < tasks.size(); i++) {
+            renameTask(tasks.get(i), newName);
         }
     }
 }

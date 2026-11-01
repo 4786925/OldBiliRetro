@@ -21,61 +21,185 @@ public class UserApi {
      * card 接口被风控时自动降级到 wbi acc/info，保证头像点击永不空白。
      */
     public static UserInfo getUserCard(long mid) throws IOException, org.json.JSONException {
+        // 个人主页/详情页都要求秒开：内部就用快速超时，避免 20 秒卡死
+        com.android.oldbili.retro.net.HttpUtil.setQuickTimeout(4000, 5000);
+        try {
+            return getUserCardSlow(mid);
+        } finally {
+            com.android.oldbili.retro.net.HttpUtil.clearQuickTimeout();
+        }
+    }
+
+    private static UserInfo getUserCardSlow(long mid)
+            throws IOException, org.json.JSONException {
+        // 先查缓存（10 分钟内不再请求，详情页秒开）
+        UserInfo cached = readCardCache(mid);
+        if (cached != null) {
+            return cached;
+        }
+        UserInfo user = new UserInfo();
+        user.mid = mid;
+
+        // 1) 旧名片接口（部分网络/账号会被 412 风控，失败就继续往下补）
         try {
             JSONObject data = BiliApi.check(HttpUtil.getJson(
                     "https://api.bilibili.com/x/web-interface/card?mid=" + mid));
             JSONObject card = data.optJSONObject("card");
-            UserInfo user = new UserInfo();
-            if (card == null) {
-                return user;
-            }
-            user.mid = card.optLong("mid", mid);
-            user.name = card.optString("name", "");
-            user.face = card.optString("face", "");
-            user.sign = card.optString("sign", "");
-            user.fans = card.optLong("fans", 0);
-            user.follows = card.optLong("attention", 0);
-            user.likes = card.optLong("likes", 0);
-            JSONObject level = card.optJSONObject("level_info");
-            if (level != null) {
-                user.level = level.optInt("current_level", 0);
-            }
-            if (user.name.length() > 0 || user.face.length() > 0) {
-                return user;
+            if (card != null) {
+                user.name = card.optString("name", "");
+                user.face = card.optString("face", "");
+                user.sign = card.optString("sign", "");
+                user.fans = card.optLong("fans", 0);
+                user.follows = card.optLong("attention", 0);
+                user.likes = card.optLong("likes", 0);
+                JSONObject level = card.optJSONObject("level_info");
+                if (level != null) {
+                    user.level = level.optInt("current_level", 0);
+                }
             }
         } catch (Exception e) {
-            android.util.Log.w("UserApi", "card 接口失败，走 acc/info: " + e.getMessage());
+            android.util.Log.w("UserApi", "card 失败: " + e.getMessage());
         }
-        // 兜底：WBI 签名的空间信息接口（风控下仍然可用）
-        try {
-            String url = BiliApi.signWbi("https://api.bilibili.com/x/space/wbi/acc/info?mid=" + mid);
-            JSONObject data = BiliApi.check(HttpUtil.getJson(url));
-            UserInfo user = new UserInfo();
-            user.mid = data.optLong("mid", mid);
-            user.name = data.optString("name", "");
-            user.face = data.optString("face", "");
-            user.sign = data.optString("sign", "");
-            // acc/info 不带粉丝/关注数，再用 relation/stat 补齐
+
+        // 2) WBI 空间信息（补昵称/签名/等级）
+        if (user.name.length() == 0 || user.sign.length() == 0) {
             try {
-                JSONObject stat = BiliApi.check(HttpUtil.getJson(
-                        "https://api.bilibili.com/x/relation/stat?vmid=" + mid));
-                user.fans = stat.optLong("follower", 0);
-                user.follows = stat.optLong("following", 0);
-            } catch (Exception ignored) {
+                JSONObject data = BiliApi.check(HttpUtil.getJson(BiliApi.signWbiWithDm(
+                        "https://api.bilibili.com/x/space/wbi/acc/info?mid=" + mid)));
+                if (user.name.length() == 0) {
+                    user.name = data.optString("name", "");
+                }
+                if (user.face.length() == 0) {
+                    user.face = data.optString("face", "");
+                }
+                if (user.sign.length() == 0) {
+                    user.sign = data.optString("sign", "");
+                }
+                if (user.level == 0) {
+                    user.level = data.optInt("level", 0);
+                }
+            } catch (Exception e) {
+                android.util.Log.w("UserApi", "acc/info 失败: " + e.getMessage());
             }
-            // 获赞数用 upstat 补齐
+        }
+
+        // 2.5) 登录态下的老空间接口（带 Cookie 可绕过部分风控）
+        if (user.name.length() == 0 || user.face.length() == 0) {
+            try {
+                JSONObject data = BiliApi.check(HttpUtil.getJsonWithLogin(
+                        "https://api.bilibili.com/x/space/acc/info?mid=" + mid));
+                if (user.name.length() == 0) {
+                    user.name = data.optString("name", "");
+                }
+                if (user.face.length() == 0) {
+                    user.face = data.optString("face", "");
+                }
+                if (user.sign.length() == 0) {
+                    user.sign = data.optString("sign", "");
+                }
+                if (user.level == 0) {
+                    user.level = data.optInt("level", 0);
+                }
+            } catch (Exception e) {
+                android.util.Log.w("UserApi", "space/acc/info 失败: " + e.getMessage());
+            }
+        }
+
+        // 3) 关注/粉丝数：relation/stat 最稳（不校验登录，也不吃 412）
+        try {
+            JSONObject stat = BiliApi.check(HttpUtil.getJson(
+                    "https://api.bilibili.com/x/relation/stat?vmid=" + mid));
+            user.fans = stat.optLong("follower", user.fans);
+            user.follows = stat.optLong("following", user.follows);
+        } catch (Exception e) {
+            android.util.Log.w("UserApi", "relation/stat 失败: " + e.getMessage());
+        }
+
+        // 4) 获赞数
+        if (user.likes == 0) {
             try {
                 JSONObject upstat = BiliApi.check(HttpUtil.getJson(
                         "https://api.bilibili.com/x/space/upstat?mid=" + mid));
                 user.likes = upstat.optLong("likes", 0);
             } catch (Exception ignored) {
             }
-            return user;
-        } catch (Exception e2) {
-            android.util.Log.w("UserApi", "acc/info 也失败: " + e2.getMessage());
-            UserInfo empty = new UserInfo();
-            empty.mid = mid;
-            return empty;
+        }
+
+        // 5) 昵称/头像兜底：vc 批量名片（登录态可用）
+        if (user.name.length() == 0 || user.face.length() == 0) {
+            try {
+                String resp = HttpUtil.vcGet(
+                        "https://api.vc.bilibili.com/account/v1/user/cards?uids=" + mid, true);
+                JSONObject root = new JSONObject(new org.json.JSONTokener(resp));
+                JSONObject data = root.optJSONObject("data");
+                if (data != null) {
+                    JSONObject card = data.optJSONObject(String.valueOf(mid));
+                    if (card != null) {
+                        if (user.name.length() == 0) {
+                            user.name = card.optString("name", "");
+                        }
+                        if (user.face.length() == 0) {
+                            user.face = card.optString("face", "");
+                        }
+                        if (user.sign.length() == 0) {
+                            user.sign = card.optString("sign", "");
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        writeCardCache(mid, user);
+        return user;
+    }
+
+    private static UserInfo readCardCache(long mid) {
+        try {
+            String raw = com.android.oldbili.retro.util.Sp.getString("user_card_cache_" + mid, "");
+            if (raw == null || raw.length() == 0) {
+                return null;
+            }
+            JSONObject o = new JSONObject(new org.json.JSONTokener(raw));
+            if (System.currentTimeMillis() - o.optLong("t", 0) > 10 * 60 * 1000L) {
+                return null;
+            }
+            UserInfo u = new UserInfo();
+            u.mid = mid;
+            u.name = o.optString("n", "");
+            u.face = o.optString("f", "");
+            u.sign = o.optString("s", "");
+            u.fans = o.optLong("fans", 0);
+            u.follows = o.optLong("fl", 0);
+            u.likes = o.optLong("lk", 0);
+            u.level = o.optInt("lv", 0);
+            // 头像为空也不用缓存（否则头像会一直不加载）
+            if (u.face.length() == 0) {
+                return null;
+            }
+            return u;
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
+
+    private static void writeCardCache(long mid, UserInfo u) {
+        // 信息太少的不要缓存，否则 10 分钟内头像一直空
+        if (u == null || (u.name.length() == 0 && u.face.length() == 0)) {
+            return;
+        }
+        try {
+            JSONObject o = new JSONObject();
+            o.put("t", System.currentTimeMillis());
+            o.put("n", u.name);
+            o.put("f", u.face);
+            o.put("s", u.sign);
+            o.put("fans", u.fans);
+            o.put("fl", u.follows);
+            o.put("lk", u.likes);
+            o.put("lv", u.level);
+            com.android.oldbili.retro.util.Sp.putString("user_card_cache_" + mid, o.toString());
+        } catch (Throwable ignored) {
         }
     }
 

@@ -303,4 +303,11 @@
     <string name="set_font">界面字体</string>
     <string name="set_font_desc">默认跟随系统；可选内置楷体（GB2312）</string>
     <string name="font_applied">字体已切换，返回后生效</string>
+
+    <string name="set_screen_orientation">屏幕方向</string>
+    <string name="set_screen_orientation_desc">跟随系统 / 强制竖屏 / 强制横屏（播放器始终横屏）</string>
+    <string name="set_download_speed">下载限速</string>
+    <string name="set_download_speed_desc">限制下载占用的带宽，老设备建议 512KB/s~1MB/s</string>
+    <string name="set_download_by_up">按 UP 主建文件夹</string>
+    <string name="set_download_by_up_desc">保存到以 UP 主名字命名的子文件夹（仅文件目录模式）</string>
 </resources>

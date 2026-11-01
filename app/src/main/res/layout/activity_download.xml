@@ -66,6 +66,15 @@
             android:text="@string/download_batch_start" />
 
         <Button
+            android:id="@+id/btn_batch_rename"
+            style="@style/RetroButton.Small"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginRight="4dp"
+            android:text="重命名" />
+
+        <Button
             android:id="@+id/btn_batch_delete"
             style="@style/RetroButton.Small"
             android:layout_width="0dp"

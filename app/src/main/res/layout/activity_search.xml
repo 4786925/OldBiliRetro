@@ -34,7 +34,23 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="6dp"
             android:text="搜索" />
+
     </LinearLayout>
+
+    <!-- 搜索联想（输入时出现） -->
+    <ScrollView
+        android:id="@+id/suggest_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1A1A1A"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/suggest_items"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
 
     <!-- 结果类型：视频/番剧/影视/直播/用户 -->
     <LinearLayout

@@ -34,6 +34,7 @@ public class BangumiListActivity extends ListPageActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        attachSwipeNav();
         mVmid = getIntent().getLongExtra("vmid", 0);
         mType = getIntent().getIntExtra("type", TYPE_BANGUMI);
         String name = getIntent().getStringExtra("name");
@@ -110,4 +111,52 @@ public class BangumiListActivity extends ListPageActivity {
     }
 
     /** 番剧卡片适配器已统一到 ListAdapters.BangumiList */
+
+    /** 左右滑动切换：追番 ←→ 追剧 */
+    private void attachSwipeNav() {
+        try {
+            mPage.getListView().setOnTouchListener(
+                    new android.view.View.OnTouchListener() {
+                        private float downX;
+                        private float downY;
+                        private boolean moved;
+
+                        @Override
+                        public boolean onTouch(android.view.View v, android.view.MotionEvent e) {
+                            switch (e.getAction()) {
+                                case android.view.MotionEvent.ACTION_DOWN:
+                                    downX = e.getX();
+                                    downY = e.getY();
+                                    moved = false;
+                                    break;
+                                case android.view.MotionEvent.ACTION_MOVE:
+                                    if (Math.abs(e.getX() - downX) > 40) {
+                                        moved = true;
+                                    }
+                                    break;
+                                case android.view.MotionEvent.ACTION_UP:
+                                    float dx = e.getX() - downX;
+                                    float dy = e.getY() - downY;
+                                    if (moved && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) {
+                                        int target = mType == TYPE_BANGUMI ? TYPE_TV : TYPE_BANGUMI;
+                                        android.content.Intent i = new android.content.Intent(
+                                                BangumiListActivity.this,
+                                                BangumiListActivity.class);
+                                        i.putExtra("type", target);
+                                        startActivity(i);
+                                        overridePendingTransition(0, 0);
+                                        return true;
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                            return false;
+                        }
+                    });
+        } catch (Throwable ignored) {
+        }
+    }
+
+
 }

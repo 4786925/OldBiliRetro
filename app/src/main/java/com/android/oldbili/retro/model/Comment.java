@@ -18,6 +18,8 @@ public class Comment {
     public String message = "";
     public long time;           // unix 秒
     public long like;
+    /** 用户等级 0~6（6 表示 6 级以上） */
+    public int level;
     public boolean isUp;        // UP主点赞标识
     public List<Comment> replies = new ArrayList<Comment>(); // 子评论（热评下）
     public List<String> pictures = new ArrayList<String>();  // 图文评论配图 URL

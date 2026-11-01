@@ -36,10 +36,17 @@ public class DynamicApi {
                 }
             }
         }
-        String next = "";
-        JSONObject offsetObj = data.optJSONObject("offset");
-        if (offsetObj != null) {
-            next = offsetObj.optString("offset", "");
+        // 接口的 offset 有时是字符串、有时是对象，两种都兼容
+        String next = data.optString("offset", "");
+        if (next.length() == 0) {
+            JSONObject offsetObj = data.optJSONObject("offset");
+            if (offsetObj != null) {
+                next = offsetObj.optString("offset", "");
+            }
+        }
+        if (next.length() == 0 && data.optBoolean("has_more", false)) {
+            // has_more 为真但没给 offset：用最后一条的时间兜底，避免只能看第一页
+            android.util.Log.w("DynamicApi", "has_more=true 但没有 offset");
         }
         return new Object[]{list, next};
     }

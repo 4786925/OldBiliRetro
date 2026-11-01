@@ -391,38 +391,55 @@ public class VideoDetailActivity extends BaseActivity {
         } else {
             findViewById(R.id.btn_follow_season).setVisibility(View.GONE);
             ImageLoader.get().load((ImageView) findViewById(R.id.up_face),
-                    ImageLoader.avatarUrl(mDetail.upFace, 96));
+                    ImageLoader.avatarUrl(mDetail.upFace, 64));
             ((TextView) findViewById(R.id.up_name)).setText(mDetail.upName);
-            // 昵称下小字：粉丝数 · 投稿数
+            // 昵称下小字：粉丝数 · 投稿数（先显示粉丝，投稿数后补，避免卡 10 秒）
             final TextView upMeta = (TextView) findViewById(R.id.up_meta);
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    String meta = null;
+                    // 详情页必须秒开：所有请求 4 秒超时且不重试
+                    com.android.oldbili.retro.net.HttpUtil.setQuickTimeout(4000, 5000);
                     try {
-                        com.android.oldbili.retro.model.UserInfo card = UserApi.getUserCard(mDetail.upMid);
-                        long fans = card != null ? card.fans : 0;
+                        long fans = 0;
+                        try {
+                            com.android.oldbili.retro.model.UserInfo card =
+                                    UserApi.getUserCard(mDetail.upMid);
+                            fans = card != null ? card.fans : 0;
+                        } catch (Exception ignored) {
+                        }
+                        final long fansFinal = fans;
+                        if (fans > 0) {
+                            runOnUi(new Runnable() {
+                                @Override
+                                public void run() {
+                                    upMeta.setText("粉丝 " + fansFinal);
+                                    upMeta.setVisibility(View.VISIBLE);
+                                }
+                            });
+                        }
                         long videos = 0;
                         try {
-                            String url = BiliApi.signWbi(
-                                    "https://api.bilibili.com/x/space/wbi/arc/search?mid=" + mDetail.upMid + "&ps=1&pn=1");
+                            String url = BiliApi.signWbiWithDm(
+                                    "https://api.bilibili.com/x/space/wbi/arc/search?mid="
+                                            + mDetail.upMid + "&ps=1&pn=1");
                             org.json.JSONObject data = BiliApi.check(HttpUtil.getJson(url));
                             videos = data.optJSONObject("page").optLong("count", 0);
                         } catch (Exception ignored) {
                         }
-                        meta = "粉丝 " + fans + " · 投稿 " + videos;
-                    } catch (Exception ignored) {
-                    }
-                    final String result = meta;
-                    runOnUi(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (result != null) {
-                                upMeta.setText(result);
-                                upMeta.setVisibility(View.VISIBLE);
+                        final long videosFinal = videos;
+                        runOnUi(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (fansFinal > 0 || videosFinal > 0) {
+                                    upMeta.setText("粉丝 " + fansFinal + " · 投稿 " + videosFinal);
+                                    upMeta.setVisibility(View.VISIBLE);
+                                }
                             }
-                        }
-                    });
+                        });
+                    } finally {
+                        com.android.oldbili.retro.net.HttpUtil.clearQuickTimeout();
+                    }
                 }
             }).start();
             upRow.setOnClickListener(new View.OnClickListener() {
@@ -1142,7 +1159,7 @@ public class VideoDetailActivity extends BaseActivity {
                     manager.addTask(ep.aid, ep.bvid, ep.cid,
                             mDetail.title, (i + 1) + ". " + (ep.longTitle.length() > 0
                                     ? ep.longTitle : ep.title), i, mDetail.cover,
-                            qn, qualityName, saveCover, coverLevel);
+                            qn, qualityName, saveCover, coverLevel, mDetail.upName);
                     count++;
                 }
             } else {
@@ -1152,14 +1169,14 @@ public class VideoDetailActivity extends BaseActivity {
                 manager.addTask(ep.aid, ep.bvid, ep.cid,
                         mDetail.title, (idx + 1) + ". " + (ep.longTitle.length() > 0
                                 ? ep.longTitle : ep.title), idx, mDetail.cover,
-                        qn, qualityName, saveCover, coverLevel);
+                        qn, qualityName, saveCover, coverLevel, mDetail.upName);
                 count = 1;
             }
         } else if (all && mDetail.partCount() > 1) {
             for (int i = 0; i < mDetail.pages.size(); i++) {
                 manager.addTask(mDetail.aid, mDetail.bvid, mDetail.pages.get(i).cid,
                         mDetail.title, mDetail.pages.get(i).title, i, mDetail.cover,
-                        qn, qualityName, saveCover, coverLevel);
+                        qn, qualityName, saveCover, coverLevel, mDetail.upName);
                 count++;
             }
         } else {
@@ -1167,7 +1184,7 @@ public class VideoDetailActivity extends BaseActivity {
             long cid = mDetail.pages.size() > 0 ? mDetail.pages.get(idx).cid : 0;
             String part = mDetail.pages.size() > 0 ? mDetail.pages.get(idx).title : "";
             manager.addTask(mDetail.aid, mDetail.bvid, cid, mDetail.title, part, idx,
-                    mDetail.cover, qn, qualityName, saveCover, coverLevel);
+                    mDetail.cover, qn, qualityName, saveCover, coverLevel, mDetail.upName);
             count = 1;
         }
         // 起后台服务挂通知

@@ -101,6 +101,8 @@ public class PlayerActivity extends Activity {
     private Runnable mClearExitFlagRunnable;
     private boolean mUserSeeking;
     private boolean mLongPressSpeed;
+    /** 当前倍速（准备完成后要重新应用，否则会被重置为 1.0） */
+    private float mSpeed = 1f;
 
     // 手势
     private GestureDetector mGestureDetector;
@@ -162,6 +164,17 @@ public class PlayerActivity extends Activity {
 
         if (mTitle != null && mTitle.length() > 0) {
             setTitle(mTitle);
+        }
+
+        // 本地文件（下载完成后点通知进入）：直接播放，不走网络
+        final String localPath = getIntent() == null ? null
+                : getIntent().getStringExtra("local_path");
+        if (localPath != null && localPath.length() > 0) {
+            if (mLoadingLayout != null) {
+                mLoadingLayout.setVisibility(View.GONE);
+            }
+            startPlay(localPath);
+            return;
         }
 
         if (mIsLive) {
@@ -451,6 +464,8 @@ public class PlayerActivity extends Activity {
         player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop",
                 Sp.getBoolean(Sp.SET_DECODER_FRAMEDROP, true) ? 4 : -1);
         player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
+        // 变速需要 SoundTouch，否则部分设备 setSpeed 静默无效
+        player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "soundtouch", 1);
         player.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 1);
         player.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "timeout", 15 * 1000 * 1000);
         player.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
@@ -525,7 +540,7 @@ public class PlayerActivity extends Activity {
                         // 新视频：重置可用清晰度并集（避免上一个视频的档位串台）
                         VideoApi.setCurrentCid(cid);
                         int defaultQn = mQualityOverride > 0 ? mQualityOverride
-                                : Sp.getInt(Sp.SET_DEFAULT_QUALITY, 0);
+                                : Sp.getIntCompat(Sp.SET_DEFAULT_QUALITY, 0);
                         // 未设置过清晰度时按安卓版本给默认：2.3~4.4=360P，5.0+=720P
                         if (defaultQn <= 0) {
                             defaultQn = com.android.oldbili.retro.util.DeviceCompat.defaultQuality();
@@ -580,7 +595,7 @@ public class PlayerActivity extends Activity {
                     // 新视频：重置可用清晰度并集
                     VideoApi.setCurrentCid(cid);
                     int defaultQn = mQualityOverride > 0 ? mQualityOverride
-                            : Sp.getInt(Sp.SET_DEFAULT_QUALITY, 0);
+                            : Sp.getIntCompat(Sp.SET_DEFAULT_QUALITY, 0);
                     // 未设置过清晰度时按安卓版本给默认：2.3~4.4=360P，5.0+=720P
                     if (defaultQn <= 0) {
                         defaultQn = com.android.oldbili.retro.util.DeviceCompat.defaultQuality();
@@ -1087,6 +1102,7 @@ public class PlayerActivity extends Activity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         try {
+                            mSpeed = speeds[which];
                             mPlayer.setSpeed(speeds[which]);
                             ((TextView) findViewById(R.id.btn_speed)).setText(names[which]);
                             toast("倍速 " + names[which]);
@@ -1309,7 +1325,7 @@ public class PlayerActivity extends Activity {
                         public void run() {
                             long pos = mPlayer != null ? mPlayer.getCurrentPosition() : 0;
                             // 播放器内改清晰度 = 改设置默认清晰度（两处一致）
-                            Sp.putInt(Sp.SET_DEFAULT_QUALITY, qn);
+                            Sp.putString(Sp.SET_DEFAULT_QUALITY, String.valueOf(qn));
                             // 整个 Activity 重建：全新 surface + 全新播放器实例，画面必然恢复。
                             // 实例内换源（reset/重建）在部分流上会画面停住、进度条不动。
                             Intent restart = new Intent(PlayerActivity.this, PlayerActivity.class);

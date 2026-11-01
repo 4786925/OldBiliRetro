@@ -13,6 +13,7 @@ public class CacheUtil {
     /** 清全部缓存（设置页"清除缓存"） */
     public static void clearAll(Context context) {
         clearUserCache();
+        clearMessageAndDynamicCache();
         try {
             com.android.oldbili.retro.net.ImageLoader.clearAll();
         } catch (Exception ignored) {
@@ -38,6 +39,23 @@ public class CacheUtil {
             Sp.putString("dynamic_page_cache", "[]");
             Sp.putString("msg_page_cache", "[]");
             // 已读消息/未读标记等账号态
+            Sp.putString("msg_unread_cache", "");
+            // 消息名片缓存（昵称/头像文字）
+            Sp.putString("msg_card_cache", "{}");
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * 清消息/动态的文字与列表缓存（设置页「清除缓存」用）：
+     * 会话列表、动态列表、名片（昵称/头像）、未读标记。
+     * 不动登录态与置顶设置。
+     */
+    public static void clearMessageAndDynamicCache() {
+        try {
+            Sp.putString("dynamic_page_cache", "[]");
+            Sp.putString("msg_page_cache", "[]");
+            Sp.putString("msg_card_cache", "{}");
             Sp.putString("msg_unread_cache", "");
         } catch (Exception ignored) {
         }

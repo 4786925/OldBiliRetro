@@ -39,6 +39,12 @@ public class SearchActivity extends BaseActivity {
     private ScrollView mHistoryScroll;
     private LinearLayout mHistoryItems;
     private ListPage mListPage;
+    private android.widget.ScrollView mSuggestScroll;
+    private LinearLayout mSuggestItems;
+    private final android.os.Handler mSuggestHandler = new android.os.Handler();
+    private Runnable mSuggestTask;
+    private int mSuggestSeq;
+    private int mLoadSeq;
 
     private int mSearchType = 0;    // 0视频 1番剧 2影视 3直播 4用户
     private int mPage = 1;
@@ -69,6 +75,22 @@ public class SearchActivity extends BaseActivity {
         mHistoryScroll = (ScrollView) findViewById(R.id.history_scroll);
         mHistoryItems = (LinearLayout) findViewById(R.id.history_items);
         mListPage = new ListPage(findViewById(R.id.result_page));
+        mSuggestScroll = (android.widget.ScrollView) findViewById(R.id.suggest_scroll);
+        mSuggestItems = (LinearLayout) findViewById(R.id.suggest_items);
+        mKeyword.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int a, int b, int c) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int a, int b, int c) {
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable e) {
+                scheduleSuggest(e.toString().trim());
+            }
+        });
 
         findViewById(R.id.search_button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -236,6 +258,7 @@ public class SearchActivity extends BaseActivity {
             return;
         }
 
+        hideSuggestions();
         saveHistory(keyword);
         if (!keyword.equals(mCurrentKeyword)) {
             mVideos.clear();
@@ -314,6 +337,7 @@ public class SearchActivity extends BaseActivity {
         }
         // 翻页时记录/恢复滚动位置（setAdapter 重建会跳回顶部）
         final int[] scroll = page == 1 ? null : captureScroll();
+        final int seq = ++mLoadSeq;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -323,6 +347,9 @@ public class SearchActivity extends BaseActivity {
                         runOnUi(new Runnable() {
                             @Override
                             public void run() {
+                                if (seq != mLoadSeq) {
+                                    return;
+                                }
                                 mUsers.addAll(users);
                                 mListPage.setAdapter(new ListAdapters.UserList(SearchActivity.this, mUsers, false));
                                 restoreScroll(scroll);
@@ -340,6 +367,9 @@ public class SearchActivity extends BaseActivity {
                         runOnUi(new Runnable() {
                             @Override
                             public void run() {
+                                if (seq != mLoadSeq) {
+                                    return;
+                                }
                                 if (mSearchType == 2) {
                                     mTvs.addAll(cards);
                                 } else {
@@ -362,6 +392,9 @@ public class SearchActivity extends BaseActivity {
                         runOnUi(new Runnable() {
                             @Override
                             public void run() {
+                                if (seq != mLoadSeq) {
+                                    return;
+                                }
                                 mLives.addAll(lives);
                                 mListPage.setAdapter(new ListAdapters.LiveList(SearchActivity.this, mLives));
                                 restoreScroll(scroll);
@@ -378,6 +411,9 @@ public class SearchActivity extends BaseActivity {
                         runOnUi(new Runnable() {
                             @Override
                             public void run() {
+                                if (seq != mLoadSeq) {
+                                    return;
+                                }
                                 mVideos.addAll(videos);
                                 mListPage.setAdapter(new ListAdapters.VideoList(SearchActivity.this, mVideos));
                                 restoreScroll(scroll);
@@ -547,5 +583,87 @@ public class SearchActivity extends BaseActivity {
             l = SearchApi.searchBangumi(mCurrentKeyword, page, mSearchType == 2);
         }
         return l;
+    }
+
+    // ==================== 搜索联想 ====================
+
+    private void scheduleSuggest(final String kw) {
+        if (mSuggestHandler == null) {
+            return;
+        }
+        if (mSuggestTask != null) {
+            mSuggestHandler.removeCallbacks(mSuggestTask);
+        }
+        if (kw.length() == 0) {
+            hideSuggestions();
+            return;
+        }
+        mSuggestTask = new Runnable() {
+            @Override
+            public void run() {
+                fetchSuggest(kw);
+            }
+        };
+        mSuggestHandler.postDelayed(mSuggestTask, 300);
+    }
+
+    private void fetchSuggest(final String kw) {
+        final int seq = ++mSuggestSeq;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final List<String> list = SearchApi.suggest(kw);
+                    runOnUi(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (seq != mSuggestSeq) {
+                                return;
+                            }
+                            renderSuggestions(list);
+                        }
+                    });
+                } catch (Exception ignored) {
+                    // 联想失败不打扰用户
+                }
+            }
+        }).start();
+    }
+
+    private void renderSuggestions(List<String> list) {
+        if (mSuggestItems == null || mSuggestScroll == null) {
+            return;
+        }
+        mSuggestItems.removeAllViews();
+        if (list == null || list.isEmpty()) {
+            hideSuggestions();
+            return;
+        }
+        for (int i = 0; i < list.size(); i++) {
+            final String word = list.get(i);
+            TextView tv = new TextView(this);
+            tv.setText(word);
+            tv.setTextSize(14);
+            tv.setTextColor(0xFFD0D0D0);
+            int p = (int) (10 * getResources().getDisplayMetrics().density);
+            tv.setPadding(p, p, p, p);
+            tv.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mKeyword.setText(word);
+                    mKeyword.setSelection(word.length());
+                    hideSuggestions();
+                    doSearch();
+                }
+            });
+            mSuggestItems.addView(tv);
+        }
+        mSuggestScroll.setVisibility(View.VISIBLE);
+    }
+
+    private void hideSuggestions() {
+        if (mSuggestScroll != null) {
+            mSuggestScroll.setVisibility(View.GONE);
+        }
     }
 }

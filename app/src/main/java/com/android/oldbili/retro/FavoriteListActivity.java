@@ -184,10 +184,14 @@ public class FavoriteListActivity extends ListPageActivity {
                                 }
                             } catch (Exception ignored) {
                             }
-                            mVideos.addAll(videos);
+                            if (mVideos.size() > 0) {
+                        mScrollPos = captureScrollPos();
+                    }
+                    mVideos.addAll(videos);
                             boolean hasMore = mVideos.size() < total;
                             finishLoad(new ListAdapters.VideoList(FavoriteListActivity.this, mVideos),
                                     mVideos.size(), hasMore);
+                    restoreScrollAfterLoad();
                             if (first > 0) {
                                 try {
                                     mPage.getListView().setSelectionFromTop(first, top);
@@ -206,5 +210,41 @@ public class FavoriteListActivity extends ListPageActivity {
                 }
             }
         }).start();
+    }
+
+    /** 加载更多前记录位置，替换适配器后恢复，避免跳顶 */
+    private int[] mScrollPos;
+    private int[] captureScrollPos() {
+        try {
+            android.widget.ListView lv = mPage.getListView();
+            if (lv == null || lv.getChildCount() == 0) {
+                return null;
+            }
+            android.view.View child = lv.getChildAt(0);
+            return new int[]{lv.getFirstVisiblePosition(),
+                    child == null ? 0 : child.getTop()};
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    private void restoreScrollAfterLoad() {
+        final int[] pos = mScrollPos;
+        mScrollPos = null;
+        if (pos == null || pos[0] <= 0) {
+            return;
+        }
+        try {
+            mPage.getListView().post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        mPage.getListView().setSelectionFromTop(pos[0], pos[1]);
+                    } catch (Throwable ignored) {
+                    }
+                }
+            });
+        } catch (Throwable ignored) {
+        }
     }
 }

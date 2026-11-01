@@ -211,4 +211,35 @@ public class SearchApi {
         }
         return null;
     }
+
+    /** 搜索联想（轻量接口，输入时用） */
+    public static List<String> suggest(String keyword) throws IOException, org.json.JSONException {
+        List<String> list = new ArrayList<String>();
+        String url = "https://s.search.bilibili.com/main/suggest?main_ver=v1&highlight=&term="
+                + HttpUtil.encode(keyword);
+        JSONObject root = HttpUtil.getJson(url);
+        JSONObject result = root.optJSONObject("result");
+        if (result == null) {
+            return list;
+        }
+        JSONArray tags = result.optJSONArray("tag");
+        if (tags == null) {
+            return list;
+        }
+        for (int i = 0; i < tags.length() && list.size() < 8; i++) {
+            JSONObject t = tags.optJSONObject(i);
+            if (t == null) {
+                continue;
+            }
+            // 接口会带 <em class="suggest_high_light"> 高亮标签，去掉后再显示
+            String name = stripHtml(t.optString("name", ""));
+            if (name.length() == 0) {
+                name = stripHtml(t.optString("value", ""));
+            }
+            if (name.length() > 0 && !list.contains(name)) {
+                list.add(name);
+            }
+        }
+        return list;
+    }
 }

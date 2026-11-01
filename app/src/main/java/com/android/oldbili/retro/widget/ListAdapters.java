@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+import com.android.oldbili.retro.net.ImageLoader;
 
 import com.android.oldbili.retro.R;
 import com.android.oldbili.retro.model.Comment;
@@ -214,6 +215,18 @@ public class ListAdapters {
         private final List<Comment> mData;
         private final LayoutInflater mInflater;
 
+        /** 外部排序后替换数据（适配器内部持有的是副本，必须整体替换） */
+        public void setItems(List<Comment> data) {
+            if (mData == null) {
+                return;
+            }
+            mData.clear();
+            if (data != null) {
+                mData.addAll(data);
+            }
+            notifyDataSetChanged();
+        }
+
         public CommentList(Activity activity, List<Comment> data) {
             mData = data == null ? new ArrayList<Comment>() : new ArrayList<Comment>(data);
             mInflater = LayoutInflater.from(activity);
@@ -336,6 +349,18 @@ public class ListAdapters {
     public static class SessionList extends BaseAdapter {
         private final List<MessageSession> mData;
         private final LayoutInflater mInflater;
+
+        /** 外部替换数据（适配器内部是副本，必须整体替换） */
+        public void setItems(List<MessageSession> data) {
+            if (mData == null) {
+                return;
+            }
+            mData.clear();
+            if (data != null) {
+                mData.addAll(data);
+            }
+            notifyDataSetChanged();
+        }
 
         public SessionList(Activity activity, List<MessageSession> data) {
             mData = data == null ? new ArrayList<MessageSession>() : new ArrayList<MessageSession>(data);
@@ -521,6 +546,68 @@ public class ListAdapters {
             holder.bind(card);
             holder.extra.setVisibility(View.VISIBLE);
             holder.extra.setText(item.progressDesc() + " · " + item.viewAtDesc());
+            return convertView;
+        }
+    }
+
+    /** 消息中心：回复 / @我 / 收到的赞 / 系统通知 */
+    public static class MsgFeedList extends BaseAdapter {
+        private final List<com.android.oldbili.retro.model.MsgFeedItem> mData;
+        private final LayoutInflater mInflater;
+
+        /** 外部替换数据（适配器内部是副本），用于加载更多/切 tab 而不重建列表 */
+        public void setItems(List<com.android.oldbili.retro.model.MsgFeedItem> data) {
+            mData.clear();
+            if (data != null) {
+                mData.addAll(data);
+            }
+            notifyDataSetChanged();
+        }
+
+        public MsgFeedList(android.app.Activity activity,
+                           List<com.android.oldbili.retro.model.MsgFeedItem> data) {
+            mData = data == null ? new ArrayList<com.android.oldbili.retro.model.MsgFeedItem>()
+                    : new ArrayList<com.android.oldbili.retro.model.MsgFeedItem>(data);
+            mInflater = LayoutInflater.from(activity);
+        com.android.oldbili.retro.util.FontManager.setFactory(mInflater, activity);
+        }
+
+        @Override
+        public int getCount() {
+            return mData.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return mData.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                convertView = mInflater.inflate(R.layout.widget_item_session, parent, false);
+            }
+            com.android.oldbili.retro.model.MsgFeedItem item = mData.get(position);
+            ImageView avatar = (ImageView) convertView.findViewById(R.id.avatar);
+            TextView name = (TextView) convertView.findViewById(R.id.name);
+            TextView last = (TextView) convertView.findViewById(R.id.last);
+            TextView time = (TextView) convertView.findViewById(R.id.time);
+            TextView unread = (TextView) convertView.findViewById(R.id.unread);
+            name.setText(item.userName != null && item.userName.length() > 0
+                    ? item.userName : "系统消息");
+            String body = item.text == null ? "" : item.text;
+            if (item.title != null && item.title.length() > 0) {
+                body = (body.length() > 0 ? body + "\n" : "") + item.title;
+            }
+            last.setText(body);
+            time.setText(item.timeDesc == null ? "" : item.timeDesc);
+            unread.setVisibility(View.GONE);
+            ImageLoader.get().load(avatar, ImageLoader.avatarUrl(item.avatar, 96));
             return convertView;
         }
     }

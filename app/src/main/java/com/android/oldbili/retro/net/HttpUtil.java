@@ -53,6 +53,18 @@ public class HttpUtil {
     private static final int MAX_REDIRECT = 5;
     private static final int MAX_RETRY = 2;
 
+    /** 本线程临时使用的超时（毫秒）：{connect, read}，null 表示用默认值 */
+    private static final ThreadLocal<int[]> QUICK_TIMEOUT = new ThreadLocal<int[]>();
+
+    /** 让本线程接下来的请求使用较短超时（详情页等需要秒开的场景） */
+    public static void setQuickTimeout(int connectMs, int readMs) {
+        QUICK_TIMEOUT.set(new int[]{connectMs, readMs});
+    }
+
+    public static void clearQuickTimeout() {
+        QUICK_TIMEOUT.remove();
+    }
+
     /** 响应体上限，老机器内存小，防止大 JSON 直接 OOM */
     private static final int MAX_RESPONSE_BYTES = 6 * 1024 * 1024;
 
@@ -361,8 +373,9 @@ public class HttpUtil {
             ((HttpsURLConnection) conn).setHostnameVerifier(sVerifier);
         }
         conn.setRequestMethod(method);
-        conn.setConnectTimeout(CONNECT_TIMEOUT);
-        conn.setReadTimeout(READ_TIMEOUT);
+        int[] quick = QUICK_TIMEOUT.get();
+        conn.setConnectTimeout(quick != null ? quick[0] : CONNECT_TIMEOUT);
+        conn.setReadTimeout(quick != null ? quick[1] : READ_TIMEOUT);
         conn.setUseCaches(false);
         conn.setDoInput(true);
         conn.setInstanceFollowRedirects(false);
@@ -390,7 +403,8 @@ public class HttpUtil {
 
     private static String get(String url, boolean forceLogin, int redirectCount) throws IOException {
         IOException last = null;
-        for (int attempt = 0; attempt <= MAX_RETRY; attempt++) {
+        int maxRetry = QUICK_TIMEOUT.get() != null ? 0 : MAX_RETRY;
+        for (int attempt = 0; attempt <= maxRetry; attempt++) {
             HttpURLConnection conn = null;
             try {
                 conn = buildConnection(url, "GET");
@@ -428,7 +442,7 @@ public class HttpUtil {
                 if (result != null && result.length() > 0) {
                     return result;
                 }
-                if (attempt < MAX_RETRY) {
+                if (attempt < maxRetry) {
                     continue;
                 }
                 return result == null ? "" : result;

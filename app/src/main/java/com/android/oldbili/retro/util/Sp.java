@@ -20,6 +20,20 @@ public class Sp {
     public static final String SET_HOME_LIVE = "set_home_live";
     /** 首页显示布局：single=单行大图 double=双行紧凑 */
     public static final String SET_HOME_LAYOUT = "set_home_layout";
+    /** 屏幕方向：auto / portrait / landscape */
+    public static final String SET_SCREEN_ORIENTATION = "set_screen_orientation";
+
+    // 推送通知开关
+    public static final String SET_NOTIFY_ENABLE = "notify_enable";
+    public static final String SET_NOTIFY_INTERACT = "notify_interact";
+    public static final String SET_NOTIFY_FOLLOW = "notify_follow";
+    public static final String SET_NOTIFY_RECOMMEND = "notify_recommend";
+    public static final String SET_NOTIFY_SUBSCRIBE = "notify_subscribe";
+    public static final String SET_NOTIFY_OTHER = "notify_other";
+    /** 下载限速（KB/s，0=不限速） */
+    public static final String SET_DOWNLOAD_SPEED = "set_download_speed";
+    /** 按 UP 主建子文件夹 */
+    public static final String SET_DOWNLOAD_BY_UP = "set_download_by_up";
     public static final String SET_DANMAKU_ENGINE = "set_danmaku_engine";
     public static final String SET_IMAGE_QUALITY = "set_image_quality";
     public static final String SET_COMMENT_SORT = "set_comment_sort";
@@ -87,6 +101,24 @@ public class Sp {
             sSp.edit().remove(key).apply();
             return def;
         }
+    }
+
+    /** 读取 int：同时兼容历史版本以 String 或 Integer 存放的情况 */
+    public static int getIntCompat(String key, int def) {
+        try {
+            Object v = sSp.getAll().get(key);
+            if (v instanceof Integer) {
+                return (Integer) v;
+            }
+            if (v instanceof Long) {
+                return ((Long) v).intValue();
+            }
+            if (v instanceof String) {
+                return Integer.parseInt(((String) v).trim());
+            }
+        } catch (Throwable ignored) {
+        }
+        return def;
     }
 
     public static long getLong(String key, long def) {
