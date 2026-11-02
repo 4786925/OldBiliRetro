@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /oldbiliretro_admin_2026.php
+Disallow: /data/
+Disallow: /inc/
+Disallow: /files/
+Disallow: /dl.php
+Disallow: /*?go=1

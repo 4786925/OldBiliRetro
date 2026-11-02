@@ -1,0 +1,110 @@
+OldBiliRetro 官网部署说明（虚拟主机 / PHP 5.3，无数据库）
+============================================================
+
+一、上传
+--------
+1. 把本压缩包里的【所有文件】解压后上传到网站根目录（通常是 public_html / www / htdocs）。
+   结构应为：
+       index.php
+       download.php   dl.php   changelog.php   faq.php   about.php
+       403.html   404.html   robots.txt   .htaccess   .user.ini
+       oldbiliretro_admin_2026.php
+       inc/    data/    files/    assets/
+
+2. 目录权限：
+       inc/   755
+       assets/ 755
+       data/  755（里面的 json 需要可写，部分主机需要 777，或把 data 设为 755 后文件 666）
+       files/ 755
+   首次访问 index.php 会自动创建 data 下的 JSON 文件。
+
+3. PHP 版本：5.3 ~ 8.3 均可（面板里可切换）。建议 5.6 / 7.4，速度更稳。
+   无需 MySQL，无需任何扩展（不需要 GD、不需要 mbstring）。
+
+二、管理面板
+------------
+地址： https://你的域名/oldbiliretro_admin_2026.php
+默认账号： admin
+默认密码： oldbili2026
+
+★ 登录后请立刻到「修改密码」改成你自己的密码（至少 8 位）。
+  连续输错 5 次会锁定 15 分钟；输错 3 次后需要算术验证码。
+
+面板可以：
+  - 修改站点标题、简介、SEO、标签、友情链接、页脚、备案号
+  - 编辑公告
+  - 增删改更新日志（版本号 / versionCode / 日期 / 更新内容 / 已知问题）
+  - 上传安装包（受 PHP upload_max_filesize 限制）
+  - 登记 files/ 里已存在的 APK（用 FTP 上传大文件后登记，推荐）
+  - 查看下载量 / 访问量 / 日志
+  - 修改密码、生成自动化 API 密钥、封禁 IP
+
+三、上传大安装包（重要）
+------------------------
+很多虚拟主机 PHP 上传上限只有 2MB，而 APK 有 3MB / 14.5MB，直接上传会失败。
+
+方式 A（推荐）：用 FTP 把 APK 传到 files/ 目录，然后在后台
+「版本与安装包 → 登记 files/ 中已有的安装包」填写文件名、版本号、versionCode、ABI 即可。
+
+方式 B：让主机商把 upload_max_filesize 调到 128M，再在后台直接上传。
+  本包已附带 .user.ini（PHP 5.3+ CGI/FPM 生效）：
+      upload_max_filesize = 128M
+      post_max_size = 130M
+  如果主机是 Apache mod_php，.htaccess 里也预留了 php_value（部分主机不允许会 500，
+  出现 500 时删掉 .htaccess 中 <IfModule mod_php5.c> 那一段即可）。
+
+四、安全设置（必看）
+--------------------
+1. data/、inc/、files/ 已通过 .htaccess 禁止直接访问；
+   如果主机是 Nginx，请让主机商或在面板里添加等价规则：
+       location ~ ^/(data|inc|files)/ { deny all; }
+       location ~ \.(json|log|md|txt|lock|tmp)$ { deny all; }
+       location = /oldbiliretro_admin_2026.php { allow 你的IP; deny all; }   # 可选
+2. 装好后尽快上 HTTPS（面板一般有一键 Let's Encrypt）。本站不需要数据库，上 HTTPS 很简单。
+3. 定期备份 data/ 目录（里面是全部内容与配置）。
+4. 面板文件名可以改，但改了要自己记住；不要发到公开地方。
+5. 如果被刷流量，可以在后台「安全」里封 IP：
+   面板会把 IP 写入 data/bans.json，全站直接 403。
+6. 下载防刷：下载页 15 秒等待 + 一次性令牌 + 每 IP 每小时 20 次文件下载限制；
+   页面本身每 IP 每分钟 180 次限制。
+
+五、自动化 API（给脚本用）
+--------------------------
+在「修改密码 → 自动化 API」生成密钥后，可 POST：
+    POST /oldbiliretro_admin_2026.php?api=1
+      key=密钥
+      action=add_version|add_log|list
+      version=1.0.6 beta&code=8&abi=full&date=2026-11-10&notes=...&size=...&file=xxx.apk
+      （add_log 用 items=多行文本）
+
+示例：
+    curl -s "https://你的域名/oldbiliretro_admin_2026.php?api=1" \
+      -d "key=你的密钥" -d "action=add_version" -d "version=1.0.6 beta" \
+      -d "code=8" -d "abi=full" -d "size=15208140" \
+      -d "file=OldBiliRetro-1.0.6-beta-full.apk"
+
+六、兼容性
+----------
+页面使用 XHTML 1.0 + 表格布局 + ES3 脚本，无 CSS3/无框架：
+  - Android 1.6 自带浏览器：可正常浏览、下载
+  - Windows Mobile / WinCE（IE Mobile）：可浏览、下载（无法安装 APK）
+  - 塞班 / 老 Nokia：可浏览
+下载页的 15 秒倒计时在无 JS 时用 meta refresh 兜底（16 秒），服务端也会强制校验 15 秒。
+
+七、常见问题
+------------
+Q: 打开首页 500？
+A: 多半是 .htaccess 里的 php_flag 不被主机允许，删掉 <IfModule mod_php5.c> 段。
+
+Q: 管理面板登录后又回到登录页？
+A: 主机 session 目录不可写，或 Cookie 被拦截。把 data/ 设为可写、确认没有禁用 Cookie。
+
+Q: 上传提示「错误码 1」？
+A: 超过 PHP upload_max_filesize，用「登记已有文件」的方式（见第三节）。
+
+Q: 下载 403？
+A: 确认 files/ 里文件存在且不是 0 字节；files/.htaccess 只拦截直接访问，
+   dl.php 通过 PHP 读文件不受影响。
+
+Q: 想换后台文件名？
+A: 直接重命名 oldbiliretro_admin_2026.php 即可（内部无硬编码文件名）。

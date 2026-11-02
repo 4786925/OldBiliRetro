@@ -1,0 +1,48 @@
+# OldBiliRetro 官网 .htaccess
+# 适用 Apache 2.2 / 2.4 虚拟主机；如主机用 Nginx，请参考 INSTALL.txt 里的等价规则
+
+Options -Indexes
+DirectoryIndex index.php index.html
+
+# ---- 禁止访问敏感目录 ----
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(data|inc|files|build-tools)/ - [F,L]
+</IfModule>
+
+# ---- 禁止访问敏感文件 ----
+<FilesMatch "\.(json|log|md|lock|tmp|bak|ini|sql|sh|py|ps1)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+<FilesMatch "^(INSTALL|README|LICENSE|THIRD_PARTY|DISCLAIMER)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ---- 禁止危险请求方法 ----
+<LimitExcept GET POST HEAD>
+    Order allow,deny
+    Deny from all
+</LimitExcept>
+
+# ---- PHP 运行参数（部分主机不允许，失败也不影响） ----
+<IfModule mod_php5.c>
+    php_flag display_errors off
+    php_flag log_errors on
+    php_value session.cookie_httponly 1
+</IfModule>
+
+# ---- 静态资源缓存 ----
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 7 days"
+    ExpiresByType application/x-javascript "access plus 7 days"
+</IfModule>
+
+ErrorDocument 403 /403.html
+ErrorDocument 404 /404.html

@@ -877,17 +877,21 @@ public class CommentListActivity extends BaseActivity {
             if (mSubContainer.getParent() instanceof android.view.ViewGroup) {
                 ((android.view.ViewGroup) mSubContainer.getParent()).removeView(mSubContainer);
             }
-            mSubDialog = new AlertDialog.Builder(CommentListActivity.this)
+            AlertDialog dlg = new AlertDialog.Builder(CommentListActivity.this)
                     .setTitle(subTitle(root))
                     .setView(mSubContainer)
                     .setPositiveButton(R.string.confirm, null)
-                    .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                        @Override
-                        public void onDismiss(DialogInterface dialog) {
-                            mSubDialog = null;
-                        }
-                    })
-                    .show();
+                    .create();
+            // 注意：setOnDismissListener 是 Dialog 的方法（API 1+），
+            // Builder 上的同名方法是 API 17 才有的，2.3/4.0 上会 NoSuchMethodError
+            dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    mSubDialog = null;
+                }
+            });
+            dlg.show();
+            mSubDialog = dlg;
         } else {
             mSubDialog.setTitle(subTitle(root));
         }

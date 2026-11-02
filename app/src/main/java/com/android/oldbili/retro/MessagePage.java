@@ -269,6 +269,9 @@ public class MessagePage {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        // 无论是否切 tab，都要结束刷新并清掉快速超时，否则会一直转圈
+                        mListPage.finishRefresh();
+                        com.android.oldbili.retro.net.HttpUtil.clearQuickTimeout();
                         if (sessionSeq != mSessionSeq || mTabIndex != TAB_PRIVATE) {
                             return; // 已切到互动消息 tab，丢弃私信结果
                         }
@@ -310,6 +313,7 @@ public class MessagePage {
                         @Override
                         public void run() {
                             mLoadingMore = false;
+                            int added = 0;
                             if (result.size() > 0) {
                                 // 去重后追加
                                 Set<Long> have = new HashSet<Long>();
@@ -320,22 +324,28 @@ public class MessagePage {
                                     MessageSession s = result.get(i);
                                     if (!have.contains(s.uid)) {
                                         mAll.add(s);
+                                        added++;
                                     }
                                 }
                                 updateMinTime(result);
                                 refreshAdapter();
                                 saveCache();
+                            }
+                            if (added > 0) {
                                 mListPage.finishLoadMore(true);
                             } else {
+                                // 服务端翻页到头/重复返回同一页：停止继续请求
+                                mMinTime = 0;
                                 mListPage.finishLoadMore(false);
                             }
                         }
                     });
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     mActivity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             mLoadingMore = false;
+                            mMinTime = 0;
                             mListPage.finishLoadMore(false);
                         }
                     });

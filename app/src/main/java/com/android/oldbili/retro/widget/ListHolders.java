@@ -457,6 +457,9 @@ public class ListHolders {
     // ==================== 私信气泡 ====================
 
     public static class MsgHolder {
+
+        /** 最近一次绑定时的 Context（给静态辅助方法用） */
+        static android.content.Context sLastContext;
         public final View itemView;
         public final ImageView avatar;
         public final TextView text;
@@ -474,7 +477,36 @@ public class ListHolders {
             if (msg == null) {
                 return;
             }
-            text.setText(replaceEmoji(msg.text));
+            sLastContext = itemView.getContext();
+            final String raw = msg.text == null ? "" : msg.text;
+            final com.android.oldbili.retro.util.MsgText.Card card =
+                    com.android.oldbili.retro.util.MsgText.parse(raw);
+            text.setText(replaceEmoji(com.android.oldbili.retro.util.MsgText.bubble(card)));
+            if (card.kind == com.android.oldbili.retro.util.MsgText.KIND_VIDEO) {
+                text.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openVideo(card.bvid);
+                    }
+                });
+            } else if (card.kind == com.android.oldbili.retro.util.MsgText.KIND_LINK) {
+                text.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openLink(card.url, card.title);
+                    }
+                });
+            } else {
+                linkify(text, replaceEmoji(raw));
+            }
+            // 长按复制：任何消息都可以复制原文
+            text.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    copyToClipboard(v.getContext(), raw);
+                    return true;
+                }
+            });
             time.setText(msg.timeDesc());
             if (avatar != null) {
                 ImageLoader.get().load(avatar, ImageLoader.avatarUrl(face, 96));
@@ -500,6 +532,117 @@ public class ListHolders {
                 });
             }
         }
+
+        /** 复制文本（兼容 API 11 前后的剪贴板 API） */
+        static void copyToClipboard(android.content.Context ctx, String s) {
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= 11) {
+                    android.content.ClipboardManager cm =
+                            (android.content.ClipboardManager)
+                                    ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("msg", s));
+                    }
+                } else {
+                    android.text.ClipboardManager cm =
+                            (android.text.ClipboardManager)
+                                    ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setText(s);
+                    }
+                }
+                android.widget.Toast.makeText(ctx, "已复制", android.widget.Toast.LENGTH_SHORT).show();
+            } catch (Throwable ignored) {
+            }
+        }
+
+        /** 打开 B 站视频 */
+        static void openVideo(String bvid) {
+            try {
+                android.content.Context ctx = sLastContext;
+                if (ctx == null || bvid == null || bvid.length() == 0) {
+                    return;
+                }
+                android.content.Intent i = new android.content.Intent(ctx,
+                        com.android.oldbili.retro.VideoDetailActivity.class);
+                i.putExtra("bvid", bvid);
+                if (!(ctx instanceof android.app.Activity)) {
+                    i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                }
+                ctx.startActivity(i);
+            } catch (Throwable ignored) {
+            }
+        }
+
+        /** 打开链接：让用户选应用内浏览器 / 系统浏览器 */
+        static void openLink(final String url, String title) {
+            try {
+                final android.content.Context ctx = sLastContext;
+                if (ctx == null || url == null || url.length() == 0) {
+                    return;
+                }
+                new android.app.AlertDialog.Builder(ctx)
+                        .setTitle(title == null || title.length() == 0 ? url : title)
+                        .setItems(new String[]{"应用内浏览器打开", "系统浏览器打开", "复制链接"},
+                                new android.content.DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(android.content.DialogInterface d, int which) {
+                                        try {
+                                            android.content.Intent i;
+                                            if (which == 0) {
+                                                i = new android.content.Intent(ctx,
+                                                        com.android.oldbili.retro.WebActivity.class);
+                                                i.putExtra("url", url);
+                                                i.putExtra("title", "网页");
+                                            } else if (which == 1) {
+                                                i = new android.content.Intent(
+                                                        android.content.Intent.ACTION_VIEW,
+                                                        android.net.Uri.parse(url));
+                                            } else {
+                                                copyToClipboard(ctx, url);
+                                                return;
+                                            }
+                                            if (!(ctx instanceof android.app.Activity)) {
+                                                i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                                            }
+                                            ctx.startActivity(i);
+                                        } catch (Throwable ignored) {
+                                        }
+                                    }
+                                })
+                        .setNegativeButton(com.android.oldbili.retro.R.string.cancel, null)
+                        .show();
+            } catch (Throwable ignored) {
+            }
+        }
+
+        /** 把文本里的 http(s) 链接变成可点击 */
+        static void linkify(final android.widget.TextView tv, String text) {
+            try {
+                final java.util.regex.Pattern p = java.util.regex.Pattern.compile(
+                        "https?://[0-9A-Za-z\\.\\-_/:%?=&#~+]+");
+                final java.util.regex.Matcher m = p.matcher(text);
+                android.text.SpannableString ss = new android.text.SpannableString(text);
+                boolean found = false;
+                while (m.find()) {
+                    found = true;
+                    final String url = m.group();
+                    ss.setSpan(new android.text.style.ClickableSpan() {
+                        @Override
+                        public void onClick(android.view.View widget) {
+                            openLink(url, url);
+                        }
+                    }, m.start(), m.end(),
+                            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+                tv.setText(ss);
+                if (found) {
+                    tv.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
     }
 
     /** 表情代码 → 近似 emoji（B 站小电视/小黄脸在文本里的形式） */
