@@ -35,3 +35,4 @@ dist/
 app/build/
 build-tools/certs/
 build-tools/acme_account.pem
+.dsh/
