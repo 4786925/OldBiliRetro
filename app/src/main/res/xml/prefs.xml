@@ -11,6 +11,14 @@
             android:summary="后台每 15 分钟检查一次，收到新消息时在通知栏提醒"
             android:defaultValue="true" />
 
+        <com.android.oldbili.retro.widget.SafeListPreference
+            android:key="notify_interval_min"
+            android:title="检查间隔"
+            android:summary="间隔越短越及时，但更费电"
+            android:entries="@array/notify_interval_entries"
+            android:entryValues="@array/notify_interval_values"
+            android:defaultValue="5" />
+
         <CheckBoxPreference
             android:key="notify_interact"
             android:title="互动通知"

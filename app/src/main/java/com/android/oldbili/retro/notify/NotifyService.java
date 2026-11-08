@@ -21,7 +21,22 @@ import com.android.oldbili.retro.util.Sp;
  */
 public class NotifyService extends Service {
 
-    private static final int INTERVAL_MS = 15 * 60 * 1000;
+    private static final int DEFAULT_INTERVAL_MIN = 5;
+
+    private static int intervalMinutes() {
+        int m = Sp.getInt("notify_interval_min", DEFAULT_INTERVAL_MIN);
+        if (m < 1) {
+            m = DEFAULT_INTERVAL_MIN;
+        }
+        if (m > 60) {
+            m = 60;
+        }
+        return m;
+    }
+
+    private static long intervalMs() {
+        return intervalMinutes() * 60L * 1000L;
+    }
     private static final String CHANNEL_ID = "message_push";
     private static final int NOTIFY_ID = 20001;
 
@@ -37,8 +52,8 @@ public class NotifyService extends Service {
                 flags |= 0x04000000; // FLAG_IMMUTABLE
             }
             PendingIntent pi = PendingIntent.getService(ctx, 0, intent, flags);
-            am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + INTERVAL_MS,
-                    INTERVAL_MS, pi);
+            long iv = intervalMs();
+            am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + iv, iv, pi);
         } catch (Throwable ignored) {
         }
     }
@@ -93,9 +108,24 @@ public class NotifyService extends Service {
             android.util.Log.w("NotifyService", "未读数获取失败: " + e.getMessage());
             return;
         }
+        // 私信未读：msgfeed/unread 不含私信，需要额外查一次会话列表
+        java.util.List<com.android.oldbili.retro.model.MessageSession> chats = null;
+        int chatUnread = 0;
+        try {
+            com.android.oldbili.retro.net.HttpUtil.setQuickTimeout(5000, 6000);
+            chats = com.android.oldbili.retro.api.MessageApi.getSessions();
+            com.android.oldbili.retro.net.HttpUtil.clearQuickTimeout();
+        } catch (Throwable e) {
+            android.util.Log.w("NotifyService", "会话未读获取失败: " + e.getMessage());
+        }
+        if (chats != null) {
+            for (int i = 0; i < chats.size(); i++) {
+                chatUnread += Math.max(0, chats.get(i).unread);
+            }
+        }
         int interact = 0;
         if (Sp.getBoolean(Sp.SET_NOTIFY_INTERACT, true)) {
-            interact = u.reply + u.at + u.like;
+            interact = u.reply + u.at + u.like + chatUnread;
         }
         int follow = Sp.getBoolean(Sp.SET_NOTIFY_FOLLOW, true) ? u.up : 0;
         int recommend = Sp.getBoolean(Sp.SET_NOTIFY_RECOMMEND, false) ? u.recommend : 0;
@@ -143,8 +173,13 @@ public class NotifyService extends Service {
         }
         Sp.putInt("notify_last_total", total);
         Sp.putLong("notify_last_ts", now);
-        resolveTarget(u, interact, follow, recommend, subscribe, other);
-        show("你有 " + total + " 条新消息", sb.toString());
+        resolveTarget(u, interact, follow, recommend, subscribe, other, chats);
+        String preview = Sp.getString("notify_text", "");
+        String text = sb.toString();
+        if (preview != null && preview.length() > 0) {
+            text = preview;
+        }
+        show("你有 " + total + " 条新消息", text);
     }
 
     @SuppressWarnings("deprecation")
@@ -218,9 +253,11 @@ public class NotifyService extends Service {
      * 回复/→评论（带 root_id + target_id）；点赞→对应视频；私信→对应会话。
      */
     private void resolveTarget(MsgUnreadApi u, int interact, int follow,
-                               int recommend, int subscribe, int other) {
+                               int recommend, int subscribe, int other,
+                               java.util.List<com.android.oldbili.retro.model.MessageSession> chats) {
         try {
             Sp.putString("notify_kind", "");
+            Sp.putString("notify_text", "");
             if (u.reply > 0) {
                 java.util.List<com.android.oldbili.retro.model.MsgFeedItem> list =
                         com.android.oldbili.retro.api.MsgFeedApi.load(
@@ -231,6 +268,13 @@ public class NotifyService extends Service {
                     Sp.putLong("notify_oid", it.sourceId);
                     Sp.putLong("notify_root", it.rootId);
                     Sp.putLong("notify_sub", it.targetId);
+                    String who = it.userName == null || it.userName.length() == 0
+                            ? "" : it.userName + "：";
+                    String what = it.text == null ? "" : it.text;
+                    if (what.length() > 40) {
+                        what = what.substring(0, 40) + "…";
+                    }
+                    Sp.putString("notify_text", who + what);
                     return;
                 }
             }
@@ -244,6 +288,13 @@ public class NotifyService extends Service {
                     Sp.putLong("notify_oid", it.sourceId);
                     Sp.putLong("notify_root", it.rootId);
                     Sp.putLong("notify_sub", it.targetId);
+                    String who = it.userName == null || it.userName.length() == 0
+                            ? "" : it.userName + "：";
+                    String what = it.text == null ? "" : it.text;
+                    if (what.length() > 40) {
+                        what = what.substring(0, 40) + "…";
+                    }
+                    Sp.putString("notify_text", who + what);
                     return;
                 }
             }
@@ -261,9 +312,8 @@ public class NotifyService extends Service {
                 }
             }
             if (interact > 0) {
-                // 私信：找第一个有未读的会话
-                java.util.List<com.android.oldbili.retro.model.MessageSession> sessions =
-                        com.android.oldbili.retro.api.MessageApi.getSessions();
+                // 私信：找第一个有未读的会话（复用 check() 已经拿到的列表）
+                java.util.List<com.android.oldbili.retro.model.MessageSession> sessions = chats;
                 if (sessions != null) {
                     for (int i = 0; i < sessions.size(); i++) {
                         com.android.oldbili.retro.model.MessageSession ss = sessions.get(i);
@@ -272,6 +322,14 @@ public class NotifyService extends Service {
                             Sp.putLong("notify_uid", ss.uid);
                             Sp.putString("notify_name", ss.name == null ? "" : ss.name);
                             Sp.putString("notify_face", ss.face == null ? "" : ss.face);
+                            String who = ss.name == null || ss.name.length() == 0
+                                    ? "有人" : ss.name;
+                            String what = com.android.oldbili.retro.util.MsgText.preview(
+                                    ss.lastMsg == null ? "" : ss.lastMsg);
+                            if (what.length() > 40) {
+                                what = what.substring(0, 40) + "…";
+                            }
+                            Sp.putString("notify_text", who + "：" + what);
                             return;
                         }
                     }

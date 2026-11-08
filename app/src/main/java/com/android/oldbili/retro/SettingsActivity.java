@@ -214,6 +214,29 @@ public class SettingsActivity extends PreferenceActivity {
                             }
                         });
             }
+            android.preference.Preference interval =
+                    findPreference("notify_interval_min");
+            if (interval != null) {
+                interval.setOnPreferenceChangeListener(
+                        new android.preference.Preference.OnPreferenceChangeListener() {
+                            @Override
+                            public boolean onPreferenceChange(
+                                    android.preference.Preference pref, Object value) {
+                                try {
+                                    int m = Integer.parseInt(String.valueOf(value));
+                                    com.android.oldbili.retro.notify.NotifyService.cancel(
+                                            SettingsActivity.this);
+                                    if (com.android.oldbili.retro.util.Sp.getBoolean(
+                                            com.android.oldbili.retro.util.Sp.SET_NOTIFY_ENABLE, true)) {
+                                        com.android.oldbili.retro.notify.NotifyService.schedule(
+                                                SettingsActivity.this);
+                                    }
+                                } catch (Throwable ignored) {
+                                }
+                                return true;
+                            }
+                        });
+            }
             android.preference.Preference permission =
                     findPreference("notify_permission");
             if (permission != null) {
