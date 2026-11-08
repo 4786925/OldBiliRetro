@@ -138,6 +138,19 @@ public class MainActivity extends BaseActivity {
     }
 
     @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // 通知点进来带 notify_kind，交给 openFromNotification 处理；
+        // 其它情况（从桌面图标进入）一律回到首页，避免停在上次的页面
+        boolean fromNotify = intent != null && intent.hasExtra("notify_kind");
+        if (!fromNotify) {
+            int tab = intent == null ? -1 : intent.getIntExtra("tab", -1);
+            switchTab(tab >= 0 && tab <= 3 ? tab : 0);
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         openFromNotification();
