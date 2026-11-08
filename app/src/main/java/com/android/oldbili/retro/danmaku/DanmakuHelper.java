@@ -193,6 +193,10 @@ public class DanmakuHelper {
             return mFields == null ? 0 : mFields.size();
         }
 
+        List<String[]> fields() {
+            return mFields;
+        }
+
         @Override
         protected IDanmakus parse() {
             Danmakus danmakus = new Danmakus();
@@ -250,20 +254,38 @@ public class DanmakuHelper {
         void onStatus(String status);
     }
 
+    /** 弹幕加载完成回调：播放器用它实现“弹幕就绪后再起播” */
+    public interface ReadyListener {
+        void onReady();
+    }
+
     /** 装载弹幕到 DanmakuView */
     public static void loadDanmaku(final IDanmakuView view, final long cid, final long durationMs,
                                    final boolean enable, final StatusListener status) {
+        loadDanmaku(view, cid, durationMs, enable, status, null);
+    }
+
+    public static void loadDanmaku(final IDanmakuView view, final long cid, final long durationMs,
+                                   final boolean enable, final StatusListener status,
+                                   final ReadyListener ready) {
         if (view == null) {
+            if (ready != null) {
+                ready.onReady();
+            }
             return;
         }
         if (!enable || !Sp.getBoolean(Sp.SET_DANMAKU_ENGINE, true)) {
             view.hide();
             view.removeAllDanmakus();
             report(status, "弹幕已关闭");
+            if (ready != null) {
+                ready.onReady();
+            }
             return;
         }
         view.show();
         report(status, "弹幕下载中…");
+        final boolean[] readyOnce = new boolean[]{false};
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -290,6 +312,12 @@ public class DanmakuHelper {
                                     } catch (Exception ignored) {
                                     }
                                     android.util.Log.i("Danmaku", "prepared 回调：引擎已启动 cid=" + cid);
+                                    if (!readyOnce[0]) {
+                                        readyOnce[0] = true;
+                                        if (ready != null) {
+                                            ready.onReady();
+                                        }
+                                    }
                                 }
 
                                 @Override
@@ -330,6 +358,89 @@ public class DanmakuHelper {
                 } catch (Exception e) {
                     android.util.Log.w("Danmaku", "弹幕加载失败: " + e.getMessage());
                     report(status, "弹幕加载失败: " + e.getMessage());
+                    if (!readyOnce[0]) {
+                        readyOnce[0] = true;
+                        if (ready != null) {
+                            ready.onReady();
+                        }
+                    }
+                }
+            }
+        }).start();
+    }
+
+    /** 模拟器兼容模式：把解析结果交给普通 View 绘制（不创建 SurfaceView/TextureView） */
+    public static void loadSimpleDanmaku(final SimpleDanmakuView view, final long cid,
+                                         final long durationMs, final boolean enable,
+                                         final StatusListener status, final ReadyListener ready) {
+        if (view == null) {
+            if (ready != null) {
+                ready.onReady();
+            }
+            return;
+        }
+        if (!enable || !Sp.getBoolean(Sp.SET_DANMAKU_ENGINE, true)) {
+            view.removeAllDanmakus();
+            view.hide();
+            report(status, "弹幕已关闭");
+            if (ready != null) {
+                ready.onReady();
+            }
+            return;
+        }
+        view.show();
+        report(status, "弹幕下载中…");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final BaseDanmakuParser parser = fetchParser(cid, durationMs);
+                    final List<SimpleDanmakuView.Item> list =
+                            new ArrayList<SimpleDanmakuView.Item>();
+                    if (parser instanceof ListParser) {
+                        List<String[]> fields = ((ListParser) parser).fields();
+                        if (fields != null) {
+                            for (int i = 0; i < fields.size(); i++) {
+                                String[] f = fields.get(i);
+                                try {
+                                    SimpleDanmakuView.Item item = new SimpleDanmakuView.Item();
+                                    item.time = (long) (Float.parseFloat(f[0]) * 1000);
+                                    int mode = parseInt(f[1], 1);
+                                    item.type = mode == 5 ? BaseDanmaku.TYPE_FIX_TOP
+                                            : (mode == 4 ? BaseDanmaku.TYPE_FIX_BOTTOM
+                                            : BaseDanmaku.TYPE_SCROLL_RL);
+                                    item.size = Float.parseFloat(f[2]);
+                                    int color = parseInt(f[3], 0xFFFFFF);
+                                    item.color = color <= 0 ? Color.WHITE : color;
+                                    item.text = f[5];
+                                    item.userHash = f[4];
+                                    if (item.text != null && item.text.length() > 0) {
+                                        list.add(item);
+                                    }
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        }
+                    }
+                    report(status, "弹幕就绪 " + list.size() + " 条（模拟器渲染）");
+                    final List<SimpleDanmakuView.Item> finalList = list;
+                    view.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            view.setItems(finalList);
+                            view.seekTo(0L);
+                            view.start();
+                            if (ready != null) {
+                                ready.onReady();
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    android.util.Log.w("Danmaku", "模拟器弹幕加载失败: " + e.getMessage());
+                    report(status, "弹幕加载失败: " + e.getMessage());
+                    if (ready != null) {
+                        ready.onReady();
+                    }
                 }
             }
         }).start();

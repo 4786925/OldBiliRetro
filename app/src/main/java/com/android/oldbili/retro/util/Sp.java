@@ -42,6 +42,8 @@ public class Sp {
     public static final String SET_DECODER_MODE = "set_decoder_mode";
     public static final String SET_DECODER_AUDIO = "set_decoder_audio";
     public static final String SET_DECODER_DISPLAY = "set_decoder_display";
+    /** 模拟器兼容渲染：视频 SurfaceView + 弹幕普通 View 同层合成 */
+    public static final String SET_EMULATOR_RENDER = "set_emulator_render";
     public static final String SET_DECODER_FRAMEDROP = "set_decoder_framedrop";
     public static final String SET_PLAYER_LONGCLICK = "set_player_longclick";
     public static final String SET_PLAYER_LOOP = "set_player_loop";

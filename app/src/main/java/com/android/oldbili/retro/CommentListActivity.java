@@ -40,6 +40,8 @@ public class CommentListActivity extends BaseActivity {
     private final android.os.Handler mFlashHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
     private int mType = 1;
+    /** 动态评论类型不对时自动换一个再试 */
+    private boolean mTypeAltTried;
     private int mSort = 3;      // 3=热度 2=时间
     private String mCursor = "";
     private boolean mHasMore = true;
@@ -267,15 +269,15 @@ public class CommentListActivity extends BaseActivity {
                 if (cursor == null || cursor.length() == 0) {
                     // 没有游标：先用游标接口拿第一页，之后用旧接口按页翻
                     if (mPageLoaded == 0) {
-                        result = CommentApi.getVideoComments(mOid, sort, cursor, 20,
+                        result = CommentApi.getVideoComments(mOid, mType, sort, cursor, 20,
                                 mComments.size());
                     } else {
                         java.util.List<Comment> legacy = CommentApi.getVideoCommentsLegacy(
-                                mOid, sort, mPageLoaded + 1, 20);
+                                mOid, mType, sort, mPageLoaded + 1, 20);
                         result = new Object[]{legacy, ""};
                     }
                 } else {
-                    result = CommentApi.getVideoComments(mOid, sort, cursor, 20,
+                    result = CommentApi.getVideoComments(mOid, mType, sort, cursor, 20,
                             mComments.size());
                 }
                     final List<Comment> comments = (List<Comment>) result[0];
@@ -329,6 +331,16 @@ public class CommentListActivity extends BaseActivity {
                         @Override
                         public void run() {
                             mLoading = false;
+                            // 动态评论传错 type 时 B 站返回 -400 invalid oid，自动换一个类型重试
+
+                            String msg = e.getMessage() == null ? "" : e.getMessage();
+                            if (!mTypeAltTried && mType != 1 && msg.indexOf("-400") >= 0) {
+                                mTypeAltTried = true;
+                                mType = (mType == 17) ? 11 : 17;
+                                mHasMore = true;
+                                loadMore();
+                                return;
+                            }
                             if (isRateLimited(e)) {
                                 mRateLimitedUntil = System.currentTimeMillis() + 20000;
                                 mListPage.pauseLoadMore("被B站限流，点击继续加载",
@@ -756,7 +768,7 @@ public class CommentListActivity extends BaseActivity {
             @Override
             public void run() {
                 try {
-                    final List<Comment> firstPage = CommentApi.getSubComments(mOid, comment.rpid, 1, mSubSort);
+                    final List<Comment> firstPage = CommentApi.getSubComments(mOid, mType, comment.rpid, 1, mSubSort);
                     runOnUi(new Runnable() {
                         @Override
                         public void run() {
@@ -969,7 +981,7 @@ public class CommentListActivity extends BaseActivity {
             @Override
             public void run() {
                 try {
-                    final List<Comment> more = CommentApi.getSubComments(mOid, root.rpid, page, mSubSort);
+                    final List<Comment> more = CommentApi.getSubComments(mOid, mType, root.rpid, page, mSubSort);
                     runOnUi(new Runnable() {
                         @Override
                         public void run() {
@@ -1004,7 +1016,7 @@ public class CommentListActivity extends BaseActivity {
             @Override
             public void run() {
                 try {
-                    final List<Comment> firstPage = CommentApi.getSubComments(mOid, mSubRoot.rpid, 1);
+                    final List<Comment> firstPage = CommentApi.getSubComments(mOid, mType, mSubRoot.rpid, 1);
                     runOnUi(new Runnable() {
                         @Override
                         public void run() {
@@ -1052,7 +1064,7 @@ public class CommentListActivity extends BaseActivity {
             public void run() {
                 try {
                     final List<Comment> firstPage =
-                            CommentApi.getSubComments(mOid, root.rpid, 1, sort);
+                            CommentApi.getSubComments(mOid, mType, root.rpid, 1, sort);
                     runOnUi(new Runnable() {
                         @Override
                         public void run() {

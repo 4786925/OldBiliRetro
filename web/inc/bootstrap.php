@@ -7,6 +7,10 @@ if (!defined('OBR_ROOT')) {
     define('OBR_ROOT', dirname(dirname(__FILE__)));
 }
 
+if (function_exists('date_default_timezone_set')) {
+    @date_default_timezone_set('Asia/Shanghai');
+}
+
 require_once dirname(__FILE__) . '/functions.php';
 require_once dirname(__FILE__) . '/config.php';
 
@@ -46,6 +50,41 @@ if (!is_array($SITE)) {
 $VERSIONS  = obr_read_json(OBR_DATA . '/versions.json');
 $CHANGELOG = obr_read_json(OBR_DATA . '/changelog.json');
 $ANNOUNCE  = obr_read_json(OBR_DATA . '/announce.json');
+$ANNOUNCEMENTS = obr_read_json(OBR_DATA . '/announcements.json');
+if (!is_array($ANNOUNCEMENTS)) {
+    $ANNOUNCEMENTS = array();
+}
+/* 只取到时间且未过期的公告，按发布时间倒序 */
+$ACTIVE_ANNOUNCEMENTS = array();
+$nowTs = time();
+foreach ($ANNOUNCEMENTS as $an) {
+    if (!is_array($an) || empty($an['text'])) {
+        continue;
+    }
+    if (!empty($an['hidden'])) {
+        continue;
+    }
+    $pub = isset($an['publish_at']) ? strtotime($an['publish_at']) : 0;
+    if ($pub && $pub > $nowTs) {
+        continue; // 定时发布：还没到时间
+    }
+    $exp = isset($an['expire_at']) ? strtotime($an['expire_at']) : 0;
+    if ($exp && $exp < $nowTs) {
+        continue;
+    }
+    $ACTIVE_ANNOUNCEMENTS[] = $an;
+}
+usort($ACTIVE_ANNOUNCEMENTS, 'obr_cmp_announce');
+
+function obr_cmp_announce($a, $b)
+{
+    $ta = isset($a['publish_at']) ? strtotime($a['publish_at']) : 0;
+    $tb = isset($b['publish_at']) ? strtotime($b['publish_at']) : 0;
+    if ($ta == $tb) {
+        return 0;
+    }
+    return ($ta > $tb) ? -1 : 1;
+}
 $STATS     = obr_read_json(OBR_DATA . '/stats.json');
 if (!is_array($VERSIONS)) {
     $VERSIONS = array();

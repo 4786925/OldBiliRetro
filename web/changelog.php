@@ -3,8 +3,8 @@ require dirname(__FILE__) . '/inc/bootstrap.php';
 require dirname(__FILE__) . '/inc/layout.php';
 
 obr_bump_stat('pv');
-obr_page_top('更新日志', 'changelog');
 
+/* 最新在前：按 versionCode 倒序，code 相同再按日期倒序 */
 $list = $CHANGELOG;
 usort($list, 'obr_cmp_log');
 
@@ -13,19 +13,51 @@ function obr_cmp_log($a, $b)
     $ca = intval(isset($a['code']) ? $a['code'] : 0);
     $cb = intval(isset($b['code']) ? $b['code'] : 0);
     if ($ca === $cb) {
-        return strcmp($b['date'], $a['date']);
+        return strcmp(isset($b['date']) ? $b['date'] : '',
+                      isset($a['date']) ? $a['date'] : '');
     }
     return ($ca < $cb) ? 1 : -1;
 }
+
+/* 每页条数：10（默认）/ 20 / 40 */
+$per = isset($_GET['per']) ? intval($_GET['per']) : 10;
+if ($per !== 20 && $per !== 40) {
+    $per = 10;
+}
+$total = count($list);
+$pages = $total > 0 ? (int) ceil($total / $per) : 1;
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+if ($page < 1) {
+    $page = 1;
+}
+if ($page > $pages) {
+    $page = $pages;
+}
+$slice = array_slice($list, ($page - 1) * $per, $per);
+
+obr_page_top('更新日志', 'changelog');
 ?>
 <div class="box">
-    <div class="box-title">更新日志 <span>与 GitHub Release 同步</span></div>
+    <div class="box-title">更新日志
+        <span>共 <?php echo intval($total); ?> 条 · 第 <?php echo intval($page); ?>/<?php echo intval($pages); ?> 页</span>
+    </div>
     <div class="box-body">
-        <?php if (count($list) === 0): ?>
+        <p class="small" style="margin-top:0;">
+            每页条数：
+            <?php foreach (array(10, 20, 40) as $opt): ?>
+                <?php if ($opt === $per): ?>
+                    <b>[<?php echo $opt; ?>]</b>
+                <?php else: ?>
+                    <a href="changelog.php?per=<?php echo $opt; ?>&amp;page=1"><?php echo $opt; ?></a>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </p>
+
+        <?php if (count($slice) === 0): ?>
             <p>暂无更新日志。</p>
         <?php endif; ?>
 
-        <?php foreach ($list as $e): ?>
+        <?php foreach ($slice as $e): ?>
             <div class="version-item">
                 <span class="v-name"><?php echo h($e['version']); ?></span>
                 <span class="v-date"><?php echo h($e['date']); ?>
@@ -50,6 +82,18 @@ function obr_cmp_log($a, $b)
                 </div>
             </div>
         <?php endforeach; ?>
+
+        <?php if ($pages > 1): ?>
+            <p style="margin-top:14px;">
+                <?php if ($page > 1): ?>
+                    <a class="btn btn-gray" href="changelog.php?per=<?php echo $per; ?>&amp;page=<?php echo $page - 1; ?>">&lt;&lt; 上一页</a>
+                <?php endif; ?>
+                &nbsp; 第 <?php echo intval($page); ?> / <?php echo intval($pages); ?> 页 &nbsp;
+                <?php if ($page < $pages): ?>
+                    <a class="btn btn-gray" href="changelog.php?per=<?php echo $per; ?>&amp;page=<?php echo $page + 1; ?>">下一页 &gt;&gt;</a>
+                <?php endif; ?>
+            </p>
+        <?php endif; ?>
 
         <p class="small">
             完整发布说明与安装包见

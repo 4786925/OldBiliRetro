@@ -44,6 +44,8 @@ public class DecoderSettingsActivity extends BaseActivity {
                 Sp.SET_DECODER_DISPLAY, "true",
                 new String[]{"TextureView", "SurfaceView"},
                 new String[]{"true", "false"});
+        addSwitch(R.string.decoder_emulator, R.string.decoder_emulator_desc,
+                Sp.SET_EMULATOR_RENDER, false);
 
         addDivider();
 

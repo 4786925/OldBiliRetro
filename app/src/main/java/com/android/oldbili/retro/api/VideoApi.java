@@ -490,15 +490,21 @@ public class VideoApi {
         } catch (Exception ignored) {
         }
         if (preferDurl) {
-            JSONObject data2 = BiliApi.check(HttpUtil.getJsonWithLogin(durlUrl));
-            java.util.List<String> candidates2 = new java.util.ArrayList<String>();
-            JSONArray durl2 = data2.optJSONArray("durl");
-            if (durl2 != null && durl2.length() > 0) {
-                collectCandidates(durl2.optJSONObject(0), candidates2);
+            try {
+                JSONObject data2 = BiliApi.check(HttpUtil.getJsonWithLogin(durlUrl));
+                java.util.List<String> candidates2 = new java.util.ArrayList<String>();
+                JSONArray durl2 = data2.optJSONArray("durl");
+                if (durl2 != null && durl2.length() > 0) {
+                    collectCandidates(durl2.optJSONObject(0), candidates2);
+                }
+                if (candidates2.size() > 0) {
+                    return new Object[]{candidates2, data2.optInt("quality", qn),
+                            data2.optLong("timelength", 0), data2.optLong("last_play_cid", 0),
+                            data2.optInt("last_play_time", 0), ""};
+                }
+            } catch (Exception ignored) {
             }
-            return new Object[]{candidates2, data2.optInt("quality", qn),
-                    data2.optLong("timelength", 0), data2.optLong("last_play_cid", 0),
-                    data2.optInt("last_play_time", 0), ""};
+            // 单流被服务端下线/不返回 durl 时，继续走 DASH 双流兜底
         }
         // 只有 1080P60/2K 才走 dash 双流
         String dashUrl = BiliApi.signWbi(playUrlQuery(idType, id, cid, qn)
@@ -610,12 +616,16 @@ public class VideoApi {
      */
     private static void collectUrls(java.util.List<String> all, java.util.List<String> candidates) {
         boolean hasOpenSsl = false;
-        try {
-            String abi = android.os.Build.CPU_ABI;
-            if (abi != null && (abi.contains("armeabi-v7a") || abi.contains("x86"))) {
-                hasOpenSsl = true;
+        // 4.0 及以下的 IJK x86/ARM 库没有可靠的 TLS：优先走 B 站 upos/bilivideo
+        // 的明文 http 口，否则 https 会被 ffmpeg 当 tcp:443 打开并在 libijkffmpeg 里崩溃。
+        if (android.os.Build.VERSION.SDK_INT > 15) {
+            try {
+                String abi = android.os.Build.CPU_ABI;
+                if (abi != null && (abi.contains("armeabi-v7a") || abi.contains("x86"))) {
+                    hasOpenSsl = true;
+                }
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
         }
         if (hasOpenSsl) {
             // https 优先

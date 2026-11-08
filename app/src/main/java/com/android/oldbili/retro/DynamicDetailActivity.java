@@ -13,7 +13,7 @@ public class DynamicDetailActivity extends CommentListActivity {
         // 动态评论：oid=动态id，type=11
         getIntent().putExtra("oid", getIntent().getLongExtra("oid",
                 getIntent().getLongExtra("dynamic", 0)));
-        getIntent().putExtra("type", 11);
+        getIntent().putExtra("type", 17);
         super.onCreate(savedInstanceState);
         setTitle("动态评论");
     }

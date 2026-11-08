@@ -23,8 +23,17 @@ public class CommentApi {
     /** 视频评论列表，cursor 传空表示第一页，floorBase 是已加载条数（楼层续排），返回 [列表, 下一页cursor] */
     public static Object[] getVideoComments(long oid, int mode, String cursor, int ps, int floorBase)
             throws IOException, org.json.JSONException {
+        return getVideoComments(oid, 1, mode, cursor, ps, floorBase);
+    }
+
+    /**
+     * @param type 1=视频 17=动态（纯文字/转发）11=图片动态 12=专栏
+     */
+    public static Object[] getVideoComments(long oid, int type, int mode, String cursor,
+                                            int ps, int floorBase)
+            throws IOException, org.json.JSONException {
         // mode: 2=按时间 3=按热度；老版 /x/v2/reply/main 已下线，走 WBI 版接口
-        String url = "https://api.bilibili.com/x/v2/reply/wbi/main?type=1&oid=" + oid
+        String url = "https://api.bilibili.com/x/v2/reply/wbi/main?type=" + type + "&oid=" + oid
                 + "&plat=1&web_location=1315875&mode=" + mode
                 + "&pagination_str=" + HttpUtil.encode("{\"offset\":\""
                 + (cursor == null ? "" : cursor) + "\"}");
@@ -70,8 +79,18 @@ public class CommentApi {
      */
     public static List<Comment> getSubComments(long oid, long root, int pn, int sort)
             throws IOException, org.json.JSONException {
+        return getSubComments(oid, 1, root, pn, sort);
+    }
+
+    public static List<Comment> getSubComments(long oid, int type, long root, int pn)
+            throws IOException, org.json.JSONException {
+        return getSubComments(oid, type, root, pn, 1);
+    }
+
+    public static List<Comment> getSubComments(long oid, int type, long root, int pn, int sort)
+            throws IOException, org.json.JSONException {
         List<Comment> list = new ArrayList<Comment>();
-        String url = "https://api.bilibili.com/x/v2/reply/reply?type=1&oid=" + oid
+        String url = "https://api.bilibili.com/x/v2/reply/reply?type=" + type + "&oid=" + oid
                 + "&root=" + root + "&ps=20&pn=" + (pn <= 0 ? 1 : pn)
                 + "&sort=" + sort;
         JSONObject data = BiliApi.check(HttpUtil.getJson(url));
@@ -269,9 +288,14 @@ public class CommentApi {
      */
     public static List<Comment> getVideoCommentsLegacy(long oid, int sort, int pn, int ps)
             throws IOException, org.json.JSONException {
+        return getVideoCommentsLegacy(oid, 1, sort, pn, ps);
+    }
+
+    public static List<Comment> getVideoCommentsLegacy(long oid, int type, int sort, int pn, int ps)
+            throws IOException, org.json.JSONException {
         List<Comment> list = new ArrayList<Comment>();
         int sortParam = sort == 2 ? 0 : 1; // 0=按时间 1=按热度
-        String url = "https://api.bilibili.com/x/v2/reply?type=1&oid=" + oid
+        String url = "https://api.bilibili.com/x/v2/reply?type=" + type + "&oid=" + oid
                 + "&pn=" + (pn <= 0 ? 1 : pn) + "&ps=" + (ps <= 0 ? 20 : ps)
                 + "&sort=" + sortParam;
         JSONObject root = HttpUtil.getJson(url);

@@ -24,6 +24,23 @@ obr_page_top('', 'index');
     ?>
 </div>
 
+<?php if (!empty($ACTIVE_ANNOUNCEMENTS)): ?>
+<div class="box">
+    <div class="box-title">最新公告</div>
+    <div class="box-body">
+        <?php foreach ($ACTIVE_ANNOUNCEMENTS as $an): ?>
+            <div class="version-item">
+                <div class="v-name" style="font-size:13px;color:#22608a;">
+                    <?php echo h($an['title']); ?>
+                    <span class="v-date"><?php echo h(isset($an['publish_at']) ? $an['publish_at'] : ''); ?></span>
+                </div>
+                <div class="v-body"><?php echo nl2br(h($an['text'])); ?></div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="box">
     <div class="box-title">关于 OldBiliRetro <span>一个给古董手机用的哔哩哔哩客户端</span></div>
     <div class="box-body">

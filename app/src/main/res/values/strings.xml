@@ -243,6 +243,8 @@
     <string name="decoder_audio_desc">OpenSL ES 延迟低，AudioTrack 兼容好</string>
     <string name="decoder_display">显示方式</string>
     <string name="decoder_display_desc">TextureView 兼容好，SurfaceView 性能高</string>
+    <string name="decoder_emulator">模拟器兼容渲染</string>
+    <string name="decoder_emulator_desc">视频用 SurfaceView、弹幕用普通 View 同层合成；仅电脑模拟器建议开</string>
     <string name="decoder_framedrop">丢帧模式</string>
     <string name="decoder_framedrop_desc">低配设备建议开启，保证流畅</string>
     <string name="decoder_longclick">长按倍速</string>

@@ -256,6 +256,61 @@ if ($logged) {
         }
     }
 
+    /* 公告（支持定时发布） */
+    if (isset($_POST['save_notice'])) {
+        if (!obr_csrf_check(isset($_POST['csrf']) ? $_POST['csrf'] : '')) {
+            $err = '会话已过期，请重试。';
+        } else {
+            $list = obr_read_json(OBR_DATA . '/announcements.json');
+            if (!is_array($list)) {
+                $list = array();
+            }
+            $id = intval(isset($_POST['notice_id']) ? $_POST['notice_id'] : 0);
+            $item = array(
+                'id'         => $id > 0 ? $id : (count($list) + 1),
+                'title'      => trim($_POST['notice_title']),
+                'text'       => trim($_POST['notice_text']),
+                'publish_at' => trim($_POST['notice_publish']),
+                'expire_at'  => trim($_POST['notice_expire']),
+                'hidden'     => isset($_POST['notice_hidden']) ? 1 : 0,
+            );
+            $found = false;
+            foreach ($list as $i => $old) {
+                if (intval($old['id']) === $item['id']) {
+                    $list[$i] = $item;
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $item['id'] = 1;
+                foreach ($list as $old) {
+                    if (intval($old['id']) >= $item['id']) {
+                        $item['id'] = intval($old['id']) + 1;
+                    }
+                }
+                $list[] = $item;
+            }
+            obr_write_json(OBR_DATA . '/announcements.json', array_values($list));
+            $msg = '公告已保存。';
+            obr_log('admin', 'save notice ' . $item['title']);
+        }
+    }
+    if (isset($_GET['noticedel'])) {
+        $id = intval($_GET['noticedel']);
+        $list = obr_read_json(OBR_DATA . '/announcements.json');
+        if (is_array($list)) {
+            $out = array();
+            foreach ($list as $an) {
+                if (intval($an['id']) !== $id) {
+                    $out[] = $an;
+                }
+            }
+            obr_write_json(OBR_DATA . '/announcements.json', array_values($out));
+            $msg = '公告已删除。';
+        }
+    }
+
     /* 上传安装包 */
     if (isset($_POST['do_upload'])) {
         if (!obr_csrf_check(isset($_POST['csrf']) ? $_POST['csrf'] : '')) {
@@ -489,6 +544,16 @@ if ($logged) {
     }
 }
 
+function adm_cmp_notice($a, $b)
+{
+    $ta = isset($a['publish_at']) ? strtotime($a['publish_at']) : 0;
+    $tb = isset($b['publish_at']) ? strtotime($b['publish_at']) : 0;
+    if ($ta == $tb) {
+        return 0;
+    }
+    return ($ta > $tb) ? -1 : 1;
+}
+
 function adm_lines($text)
 {
     $out = array();
@@ -600,6 +665,7 @@ $self = h(basename(__FILE__));
         <div class="adm-tabs">
             <a href="<?php echo $self; ?>?tab=home" class="<?php echo $tab === 'home' ? 'on' : ''; ?>">概览</a>
             <a href="<?php echo $self; ?>?tab=site" class="<?php echo $tab === 'site' ? 'on' : ''; ?>">站点内容</a>
+            <a href="<?php echo $self; ?>?tab=notice" class="<?php echo $tab === 'notice' ? 'on' : ''; ?>">公告</a>
             <a href="<?php echo $self; ?>?tab=log" class="<?php echo $tab === 'log' ? 'on' : ''; ?>">更新日志</a>
             <a href="<?php echo $self; ?>?tab=version" class="<?php echo $tab === 'version' ? 'on' : ''; ?>">版本与安装包</a>
             <a href="<?php echo $self; ?>?tab=pass" class="<?php echo $tab === 'pass' ? 'on' : ''; ?>">修改密码</a>
@@ -673,7 +739,58 @@ $self = h(basename(__FILE__));
                 <div class="field"><input class="btn" type="submit" name="save_announce" value="更新公告" /></div>
             </form>
 
-        <?php elseif ($tab === 'log'): ?>
+        <?php elseif ($tab === 'notice'): ?>
+<?php
+$notices = obr_read_json(OBR_DATA . '/announcements.json');
+if (!is_array($notices)) { $notices = array(); }
+$editId = isset($_GET['nid']) ? intval($_GET['nid']) : 0;
+$edit = null;
+foreach ($notices as $an) { if (intval($an['id']) === $editId) { $edit = $an; break; } }
+if ($edit === null) {
+    $edit = array('id' => 0, 'title' => '', 'text' => '',
+            'publish_at' => date('Y-m-d H:i'), 'expire_at' => '', 'hidden' => 0);
+}
+usort($notices, 'adm_cmp_notice');
+?>
+<h2>公告列表（新的在上面）</h2>
+<p class="small">发布时间晚于当前时间 = 定时发布；过期时间留空 = 长期有效。</p>
+<table class="adm-list">
+<tr><th>ID</th><th>标题</th><th>发布时间</th><th>过期时间</th><th>状态</th><th>操作</th></tr>
+<?php foreach ($notices as $an): ?>
+<?php
+$pub = isset($an['publish_at']) ? $an['publish_at'] : '';
+$exp = isset($an['expire_at']) ? $an['expire_at'] : '';
+$pt = $pub ? strtotime($pub) : 0;
+$et = $exp ? strtotime($exp) : 0;
+$state = '显示中';
+if (!empty($an['hidden'])) { $state = '已隐藏'; }
+elseif ($pt && $pt > time()) { $state = '定时发布'; }
+elseif ($et && $et < time()) { $state = '已过期'; }
+?>
+<tr>
+<td><?php echo intval($an['id']); ?></td>
+<td><?php echo h($an['title']); ?></td>
+<td><?php echo h($pub); ?></td>
+<td><?php echo h($exp); ?></td>
+<td><?php echo h($state); ?></td>
+<td><a href="<?php echo $self; ?>?tab=notice&amp;nid=<?php echo intval($an['id']); ?>">编辑</a> |
+<a href="<?php echo $self; ?>?tab=notice&amp;noticedel=<?php echo intval($an['id']); ?>"
+ onclick="return confirm('delete?');">删除</a></td>
+</tr>
+<?php endforeach; ?>
+</table>
+<h2><?php echo $editId > 0 ? '编辑公告' : '新增公告'; ?></h2>
+<form method="post" action="<?php echo $self; ?>?tab=notice">
+<input type="hidden" name="csrf" value="<?php echo h($csrf); ?>" />
+<input type="hidden" name="notice_id" value="<?php echo intval($edit['id']); ?>" />
+<div class="field"><label>标题</label><input class="txt" type="text" name="notice_title" value="<?php echo h($edit['title']); ?>" /></div>
+<div class="field"><label>正文</label><textarea name="notice_text" style="height:120px"><?php echo h($edit['text']); ?></textarea></div>
+<div class="field"><label>发布时间（如 2026-11-08 22:00，留空=立即）</label><input class="txt small" type="text" name="notice_publish" value="<?php echo h($edit['publish_at']); ?>" /></div>
+<div class="field"><label>过期时间（留空=长期）</label><input class="txt small" type="text" name="notice_expire" value="<?php echo h($edit['expire_at']); ?>" /></div>
+<div class="field"><label><input type="checkbox" name="notice_hidden" value="1" <?php echo !empty($edit['hidden']) ? 'checked' : ''; ?> /> 隐藏</label></div>
+<div class="field"><input class="btn" type="submit" name="save_notice" value="保存公告" /></div>
+</form>
+<?php elseif ($tab === 'log'): ?>
             <h2>更新日志</h2>
             <table class="adm-list">
                 <tr><th width="16%">版本</th><th width="8%">code</th><th width="14%">日期</th>

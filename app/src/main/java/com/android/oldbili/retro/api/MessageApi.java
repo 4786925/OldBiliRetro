@@ -58,7 +58,6 @@ public class MessageApi {
                 session.lastMsg = parseContent(content);
             }
             if (session.uid > 0) {
-                fillNameFace(session);
                 list.add(session);
             }
         }

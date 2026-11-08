@@ -32,6 +32,7 @@ import com.android.oldbili.retro.api.InteractionApi;
 import com.android.oldbili.retro.api.UserApi;
 import com.android.oldbili.retro.api.VideoApi;
 import com.android.oldbili.retro.danmaku.DanmakuHelper;
+import com.android.oldbili.retro.danmaku.SimpleDanmakuView;
 import com.android.oldbili.retro.model.VideoDetail;
 import com.android.oldbili.retro.model.VideoPage;
 import com.android.oldbili.retro.net.HttpUtil;
@@ -77,6 +78,9 @@ public class PlayerActivity extends Activity {
     private SurfaceView mSurfaceView;
     private TextureView mTextureView;
     private master.flame.danmaku.controller.IDanmakuView mDanmakuView;
+    private SimpleDanmakuView mSimpleDanmaku;
+    private boolean mPlaybackStarted;
+    private boolean mFirstPlay = true;
     private boolean mPrepared;
     private boolean mDanmakuEnabled;
     private boolean mHardwareDecode;
@@ -187,8 +191,10 @@ public class PlayerActivity extends Activity {
     // ==================== 画面与播放器 ====================
 
     private void initPlayerSurface() {
-        // TextureView 是安卓4.0+的组件，2.x 老设备强制用 SurfaceView
-        boolean useTexture = Sp.getBoolean(Sp.SET_DECODER_DISPLAY, true)
+        boolean emulatorRender = Sp.getBoolean(Sp.SET_EMULATOR_RENDER, false);
+        // 模拟器兼容渲染：4.0+ 用 TextureView（窗口内合成），弹幕用普通 View；
+        // 2.x 没有 TextureView，只能 SurfaceView + 普通 View。
+        boolean useTexture = (emulatorRender || Sp.getBoolean(Sp.SET_DECODER_DISPLAY, true))
                 && android.os.Build.VERSION.SDK_INT >= 14;
         if (useTexture) {
             mTextureView = new TextureView(this);
@@ -264,18 +270,25 @@ public class PlayerActivity extends Activity {
             mSurfaceContainer.addView(mSurfaceView, lp);
         }
 
-        // 弹幕层（DanmakuFlameMaster）
-        // 4.0+ 用 TextureView 硬件加速绘制（60fps 顺滑，高分屏不卡）；
-        // 2.3 用 SurfaceView（软件 Canvas，老设备本来就 30fps 足够）
-        if (android.os.Build.VERSION.SDK_INT >= 14) {
-            mDanmakuView = new master.flame.danmaku.ui.widget.DanmakuTextureView(this);
-            // 注意：TextureView 不支持背景 drawable，不能 setBackgroundColor
+        // 弹幕层
+        if (emulatorRender) {
+            // 普通 View：和视频 SurfaceView 同属一个 Window，透明背景可正常叠在
+            // 视频挖孔上；这是模拟器专用的“视频+弹幕同层合成”方案。
+            mSimpleDanmaku = new SimpleDanmakuView(this);
+            mDanmakuView = mSimpleDanmaku;
         } else {
+            // 真机：DanmakuView 是 SurfaceView 透明覆盖层（setZOrderMediaOverlay +
+            // PixelFormat.TRANSPARENT），在视频 Surface 之上合成
             mDanmakuView = new DanmakuView(this);
             ((View) mDanmakuView).setBackgroundColor(Color.TRANSPARENT);
         }
         mSurfaceContainer.addView((View) mDanmakuView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        ((View) mDanmakuView).bringToFront();
+        if (!mDanmakuEnabled) {
+            // 关弹幕时直接隐藏弹幕层
+            ((View) mDanmakuView).setVisibility(View.GONE);
+        }
     }
 
     private void initPlayer() {
@@ -289,67 +302,41 @@ public class PlayerActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mLoadingLayout.setVisibility(View.GONE);
-                        mPlayer.start();
-                        // 音轨已就绪：延迟 350ms 再出声——视频首帧渲染需要时间，
-                        // 若同步 start，声音会比画面早 0.3 秒左右（人耳明显）
-                        if (mAudioReady && mAudioPlayer != null) {
-                            mHandler.postDelayed(new Runnable() {
+                        final boolean needDanmakuFirst = mFirstPlay && !mIsLive && mDanmakuEnabled
+                                && mDetail != null && mDetail.pages != null
+                                && mDetail.pages.size() > 0;
+                        if (needDanmakuFirst) {
+                            // 老 B 站的做法：先显示“弹幕加载中”，弹幕就绪后再起播
+                            mLoadingLayout.setVisibility(View.VISIBLE);
+                            mLoadingText.setText("弹幕加载中…");
+                            final Runnable timeout = new Runnable() {
                                 @Override
                                 public void run() {
-                                    try {
-                                        if (mAudioPlayer != null) {
-                                            mAudioPlayer.start();
-                                            long target = mPendingSeekMs > 0 ? mPendingSeekMs
-                                                    : (mStartSeekMs > 0 ? mStartSeekMs : 0);
-                                            if (target > 0) {
-                                                mAudioPlayer.seekTo((int) target);
+                                    if (!mPlaybackStarted) {
+                                        mLoadingText.setText("弹幕加载超时，先播放");
+                                        startPlaybackAfterDanmaku();
+                                    }
+                                }
+                            };
+                            mHandler.postDelayed(timeout, 8000);
+                            loadDanmaku(new DanmakuHelper.ReadyListener() {
+                                @Override
+                                public void onReady() {
+                                    mHandler.removeCallbacks(timeout);
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if (!mPlaybackStarted) {
+                                                startPlaybackAfterDanmaku();
                                             }
                                         }
-                                    } catch (Exception ignored) {
-                                    }
+                                    });
                                 }
-                            }, 350);
-                        }
-                        // 切清晰度重进带来的起始进度（recreate 时透传）
-                        if (mPendingSeekMs < 0 && mStartSeekMs > 0 && !mIsLive) {
-                            mPendingSeekMs = mStartSeekMs;
-                        }
-                        // 从历史位置/切换清晰度/切分P后恢复进度
-                        if (mPendingSeekMs > 0 && !mIsLive) {
-                            long target = mPendingSeekMs;
-                            mPendingSeekMs = -1;
-                            if (target < mPlayer.getDuration()) {
-                                mPlayer.seekTo(target);
-                                if (mAudioPlayer != null) {
-                                    try {
-                                        mAudioPlayer.seekTo((int) target);
-                                    } catch (Exception ignored) {
-                                    }
-                                }
-                                DanmakuHelper.seekTo(mDanmakuView, target);
-                            }
-                        }
-                        if (mIsLive) {
-                            mProgress.setEnabled(false);
+                            });
                         } else {
                             loadDanmaku();
-                            startProgressTicker();
+                            startPlaybackAfterDanmaku();
                         }
-                        // 首播时序保险：延迟重试画面比例调整，避免"必须切一下画质才正常"
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                adjustSurfaceSize();
-                            }
-                        }, 200);
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                adjustSurfaceSize();
-                            }
-                        }, 800);
-                        showController();
                     }
                 });
             }
@@ -405,6 +392,75 @@ public class PlayerActivity extends Activity {
         });
     }
 
+    /** 弹幕就绪（或超时/关闭）后真正起播 */
+    private void startPlaybackAfterDanmaku() {
+        if (mPlaybackStarted || mPlayer == null) {
+            return;
+        }
+        mPlaybackStarted = true;
+        mFirstPlay = false;
+        mLoadingLayout.setVisibility(View.GONE);
+        mPlayer.start();
+        // 音轨已就绪：延迟 350ms 再出声——视频首帧渲染需要时间，
+        // 若同步 start，声音会比画面早 0.3 秒左右（人耳明显）
+        if (mAudioReady && mAudioPlayer != null) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (mAudioPlayer != null) {
+                            mAudioPlayer.start();
+                            long target = mPendingSeekMs > 0 ? mPendingSeekMs
+                                    : (mStartSeekMs > 0 ? mStartSeekMs : 0);
+                            if (target > 0) {
+                                mAudioPlayer.seekTo((int) target);
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            }, 350);
+        }
+        // 切清晰度重进带来的起始进度（recreate 时透传）
+        if (mPendingSeekMs < 0 && mStartSeekMs > 0 && !mIsLive) {
+            mPendingSeekMs = mStartSeekMs;
+        }
+        // 从历史位置/切换清晰度/切分P后恢复进度
+        if (mPendingSeekMs > 0 && !mIsLive) {
+            long target = mPendingSeekMs;
+            mPendingSeekMs = -1;
+            if (target < mPlayer.getDuration()) {
+                mPlayer.seekTo(target);
+                if (mAudioPlayer != null) {
+                    try {
+                        mAudioPlayer.seekTo((int) target);
+                    } catch (Exception ignored) {
+                    }
+                }
+                DanmakuHelper.seekTo(mDanmakuView, target);
+            }
+        }
+        if (mIsLive) {
+            mProgress.setEnabled(false);
+        } else {
+            startProgressTicker();
+        }
+        // 首播时序保险：延迟重试画面比例调整，避免"必须切一下画质才正常"
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                adjustSurfaceSize();
+            }
+        }, 200);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                adjustSurfaceSize();
+            }
+        }, 800);
+        showController();
+    }
+
     /** 按视频宽高比适配画面：竖屏不拉伸、横屏不变形（TextureView 用矩阵，SurfaceView 用尺寸） */
     private void adjustSurfaceSize() {
         if (mVideoWidth <= 0 || mVideoHeight <= 0) {
@@ -437,6 +493,12 @@ public class PlayerActivity extends Activity {
             matrix.setScale(displayW * scale / cw, displayH * scale / ch);
             mTextureView.setTransform(matrix);
         } else if (mSurfaceView != null) {
+            // 老 Android 的 SurfaceView 在模拟器上会出现 stride 不匹配的黑条/黑块：
+            // 把 Surface 缓冲固定成视频原始尺寸，让系统负责缩放到 View 大小。
+            try {
+                mSurfaceView.getHolder().setFixedSize(mVideoWidth, mVideoHeight);
+            } catch (Exception ignored) {
+            }
             // SurfaceView：布局按显示比例等比缩放（至少一边铺满容器，不变形拉伸）
             float scale = Math.min(cw / displayW, ch / displayH);
             int w = Math.round(displayW * scale);
@@ -669,6 +731,8 @@ public class PlayerActivity extends Activity {
     private String mAudioUrl = "";
 
     private void startPlay(String url) {
+        mPlaybackStarted = false;
+        mPrepared = false;
         // 已移除本地代理转发：直接用 IJK 播放候选地址
         // （v7a/x86 的 so 已带 OPENSSL 可播 https；arm64 无 openssl 版本，只能走 http 节点）
         // 每次完整重建播放器实例：reset 复用在新系统/IJK 组合下切源会随机失败
@@ -873,11 +937,18 @@ public class PlayerActivity extends Activity {
     }
 
     private void loadDanmaku() {
+        loadDanmaku(null);
+    }
+
+    private void loadDanmaku(final DanmakuHelper.ReadyListener ready) {
         long cid;
         if (mAvid > 0) {
             cid = mCid;   // 番剧单集模式
         } else {
             if (mDetail == null || mDetail.pages.size() == 0) {
+                if (ready != null) {
+                    ready.onReady();
+                }
                 return;
             }
             cid = mDetail.pages.get(mPageIndex).cid;
@@ -887,18 +958,24 @@ public class PlayerActivity extends Activity {
             durationMs = mPlayer.getDuration();
         }
         DanmakuHelper.applyConfig();
-        DanmakuHelper.loadDanmaku(mDanmakuView, cid, durationMs, mDanmakuEnabled,
-                new DanmakuHelper.StatusListener() {
+        DanmakuHelper.StatusListener status = new DanmakuHelper.StatusListener() {
+            @Override
+            public void onStatus(final String status) {
+                runOnUiThread(new Runnable() {
                     @Override
-                    public void onStatus(final String status) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                updateDanmakuStatus(status);
-                            }
-                        });
+                    public void run() {
+                        updateDanmakuStatus(status);
                     }
                 });
+            }
+        };
+        if (mSimpleDanmaku != null) {
+            DanmakuHelper.loadSimpleDanmaku(mSimpleDanmaku, cid, durationMs,
+                    mDanmakuEnabled, status, ready);
+        } else {
+            DanmakuHelper.loadDanmaku(mDanmakuView, cid, durationMs, mDanmakuEnabled,
+                    status, ready);
+        }
     }
 
     private TextView mDmStatusText;

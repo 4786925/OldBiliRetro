@@ -1,18 +1,31 @@
 # OldBiliRetro 当前状态快照
 
-> 最后更新：2026-11-02
+> 最后更新：2026-11-08
 > 每次大改动（发版、修重大 bug、服务器变更）后，更新这个文件。
 
 ## 版本与产物
 
 | 项目 | 值 |
 |---|---|
-| 当前版本 | **1.0.6 beta**（versionCode **8**） |
-| Git 提交 | `5082c28 release: 1.0.6 beta` |
+| 当前版本 | **1.0.6 beta**（versionCode **8**，2026-11-08 重新打包：动态评论 + 消息加载修复） |
+| Git 提交 | 见 git log 最新 |
 | GitHub Release | https://github.com/4786925/OldBiliRetro/releases/tag/v1.0.6-beta |
 | 官网 | http://136.suzushikaze274.com/ |
-| 全架构包 | `OldBiliRetro-1.0.6-beta-full.apk`（15,210,348 字节，MD5 `DE23F6635404C320F5FD61EBAB7B7C6E`） |
-| V7 精简包 | `OldBiliRetro-1.0.6-beta-armv7-lite.apk`（3,213,492 字节，MD5 `0BF468F3664D4345EDF776561F4A6A89`） |
+| 全架构包 | `OldBiliRetro-1.0.6-beta-full.apk`（15,212,860 字节，MD5 `DFF17AF0A82ACF68590EE050D31A0D93`） |
+| V7 精简包 | `OldBiliRetro-1.0.6-beta-armv7-lite.apk`（3,216,028 字节，MD5 `40204C1E1CCFBC11912E88CD1A040E7F`） |
+
+## 2026-11-08 追加修复
+
+- 动态（图文动态）评论区打不开、报 `-400 invalid oid`：评论类型原来写死 `type=1`（视频），
+  现在 `CommentListActivity` 支持 `type` 参数（动态先用 17，失败自动换 11 重试）
+- 首次登录消息列表要几分钟：`getSessions` 原来对每个会话**逐条**请求名片，
+  现在改成 `account/v1/user/cards` **批量补**（每次 50 个，最多 2 批），并优先读本地名片缓存
+
+## 官网 2026-11-08 更新
+
+- 更新日志：最新在上，分页 10 条/页（可切 20/40）
+- 公告系统：后台新增「公告」页，支持**定时发布**（发布时间未到不显示）、过期时间、隐藏、编辑/删除
+- 首页显示当前生效的公告，按发布时间倒序
 
 ## 1.0.6 修了什么
 

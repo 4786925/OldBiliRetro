@@ -226,7 +226,6 @@ public class HttpUtil {
             map.put("buvid_fp", fp.toString());
 
             map.put("PVID", "1");
-            map.put("CURRENT_FNVAL", "4048");
             map.put("browser_resolution", "1280-720");
 
             StringBuilder sb = new StringBuilder();
