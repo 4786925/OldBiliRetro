@@ -195,8 +195,9 @@ public class MessageApi {
         if (todo.isEmpty()) {
             return;
         }
+        int threads = android.os.Build.VERSION.SDK_INT <= 10 ? 2 : 8;
         final java.util.concurrent.ExecutorService pool =
-                java.util.concurrent.Executors.newFixedThreadPool(8);
+                java.util.concurrent.Executors.newFixedThreadPool(threads);
         final java.util.concurrent.CountDownLatch latch =
                 new java.util.concurrent.CountDownLatch(todo.size());
         for (int i = 0; i < todo.size(); i++) {
@@ -229,13 +230,15 @@ public class MessageApi {
         }
         com.android.oldbili.retro.model.UserInfo cached = readCardCache(session.uid);
         if (cached != null) {
-            if (session.name.length() == 0) {
+            if (session.name.length() == 0 && cached.name.length() > 0) {
                 session.name = cached.name;
             }
-            if (session.face.length() == 0) {
+            if (session.face.length() == 0 && cached.face.length() > 0) {
                 session.face = cached.face;
             }
-            return;
+            if (session.name.length() > 0) {
+                return;
+            }
         }
         com.android.oldbili.retro.model.UserInfo card = getUserCard(session.uid);
         if (card != null && (card.name.length() > 0 || card.face.length() > 0)) {
@@ -261,7 +264,8 @@ public class MessageApi {
                     com.android.oldbili.retro.util.Sp.getString("msg_card_cache", "{}")));
             String key = String.valueOf(uid);
             JSONObject item = root.optJSONObject(key);
-            if (item != null && System.currentTimeMillis() - item.optLong("t", 0) < 7L * 24 * 3600 * 1000) {
+            if (item != null && item.optString("n", "").length() > 0
+                    && System.currentTimeMillis() - item.optLong("t", 0) < 7L * 24 * 3600 * 1000) {
                 com.android.oldbili.retro.model.UserInfo info = new com.android.oldbili.retro.model.UserInfo();
                 info.mid = uid;
                 info.name = item.optString("n", "");

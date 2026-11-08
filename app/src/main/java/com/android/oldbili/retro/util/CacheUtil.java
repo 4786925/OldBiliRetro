@@ -40,9 +40,7 @@ public class CacheUtil {
             Sp.putString("msg_page_cache", "[]");
             // 已读消息/未读标记等账号态
             Sp.putString("msg_unread_cache", "");
-            // 消息名片缓存（昵称/头像文字）
-            Sp.putString("msg_card_cache", "{}");
-        } catch (Exception ignored) {
+                    } catch (Exception ignored) {
         }
     }
 
