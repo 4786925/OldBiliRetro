@@ -61,13 +61,168 @@ public class MessageApi {
                 list.add(session);
             }
         }
+        // 批量补昵称/头像（一次 50 个），把首次加载从上百次请求降到 2 次
+        fillNamesBatch(list, 2);
         return list;
+    }
+
+    /**
+     * 批量补名字：account/v1/user/cards。返回的 data 既可能是数组，
+     * 也可能是 {uid: {...}} 的对象，两种都兼容。
+     */
+    private static void fillNamesBatch(List<MessageSession> list, int maxBatch) {
+        List<Long> uids = new ArrayList<Long>();
+        for (int i = 0; i < list.size(); i++) {
+            MessageSession s = list.get(i);
+            if (s.uid <= 0) {
+                continue;
+            }
+            if (s.name.length() > 0 && s.face.length() > 0) {
+                continue;
+            }
+            com.android.oldbili.retro.model.UserInfo c = readCardCache(s.uid);
+            if (c != null) {
+                if (s.name.length() == 0) {
+                    s.name = c.name;
+                }
+                if (s.face.length() == 0) {
+                    s.face = c.face;
+                }
+                if (s.name.length() > 0 && s.face.length() > 0) {
+                    continue;
+                }
+            }
+            uids.add(Long.valueOf(s.uid));
+            if (uids.size() >= 100) {
+                break;
+            }
+        }
+        int batch = 0;
+        int from = 0;
+        while (batch < maxBatch && from < uids.size()) {
+            int to = Math.min(from + 50, uids.size());
+            StringBuilder sb = new StringBuilder();
+            for (int i = from; i < to; i++) {
+                if (sb.length() > 0) {
+                    sb.append(',');
+                }
+                sb.append(uids.get(i).longValue());
+            }
+            from = to;
+            batch++;
+            try {
+                String url = "https://api.vc.bilibili.com/account/v1/user/cards?uids=" + sb
+                        + "&build=0&mobi_app=web";
+                JSONObject data = BiliApi.check(new JSONObject(
+                        new org.json.JSONTokener(HttpUtil.vcGet(url, true))));
+                JSONArray cards = data.optJSONArray("data");
+                if (cards == null) {
+                    cards = data.optJSONArray("cards");
+                }
+                JSONObject cardMap = null;
+                if (cards == null) {
+                    cardMap = data.optJSONObject("data");
+                    if (cardMap == null) {
+                        cardMap = data.optJSONObject("cards");
+                    }
+                }
+                if (cards == null && cardMap == null) {
+                    android.util.Log.w("MessageApi", "名片批量返回异常: " + data);
+                    break;
+                }
+                java.util.List<JSONObject> items = new java.util.ArrayList<JSONObject>();
+                if (cards != null) {
+                    for (int i = 0; i < cards.length(); i++) {
+                        JSONObject c = cards.optJSONObject(i);
+                        if (c != null) {
+                            items.add(c);
+                        }
+                    }
+                } else {
+                    java.util.Iterator<String> it = cardMap.keys();
+                    while (it.hasNext()) {
+                        String k = it.next();
+                        JSONObject c = cardMap.optJSONObject(k);
+                        if (c != null) {
+                            items.add(c);
+                        }
+                    }
+                }
+                for (int i = 0; i < items.size(); i++) {
+                    JSONObject c = items.get(i);
+                    long mid = c.optLong("mid", 0);
+                    String name = c.optString("name", "");
+                    String face = c.optString("face", "");
+                    if (mid <= 0 || name.length() == 0) {
+                        continue;
+                    }
+                    writeCardCache(mid, name, face);
+                    for (int j = 0; j < list.size(); j++) {
+                        MessageSession s = list.get(j);
+                        if (s.uid != mid) {
+                            continue;
+                        }
+                        if (s.name.length() == 0) {
+                            s.name = name;
+                        }
+                        if (s.face.length() == 0) {
+                            s.face = face;
+                        }
+                    }
+                }
+            } catch (Throwable e) {
+                android.util.Log.w("MessageApi", "批量补名字失败: " + e.getMessage());
+            }
+        }
     }
 
     /**
      * 昵称头像补齐：优先本地名片缓存（Sp），没有才请求名片接口，
      * 并且同一批补齐之间加间隔，避免连续请求被打成风控。
      */
+    /**
+     * 并发补剩下的昵称：单线程逐个请求太慢（首次登录上百个会话），
+     * 这里用 8 个线程并发，几秒内补齐，补完由调用方刷新列表。
+     */
+    public static void fillRemainingNames(List<MessageSession> list, int max) {
+        java.util.List<MessageSession> todo = new java.util.ArrayList<MessageSession>();
+        for (int i = 0; i < list.size() && todo.size() < max; i++) {
+            MessageSession s = list.get(i);
+            if (s.uid > 0 && s.name.length() == 0) {
+                todo.add(s);
+            }
+        }
+        if (todo.isEmpty()) {
+            return;
+        }
+        final java.util.concurrent.ExecutorService pool =
+                java.util.concurrent.Executors.newFixedThreadPool(8);
+        final java.util.concurrent.CountDownLatch latch =
+                new java.util.concurrent.CountDownLatch(todo.size());
+        for (int i = 0; i < todo.size(); i++) {
+            final MessageSession s = todo.get(i);
+            pool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        fillNameFace(s);
+                        if (s.name.length() > 0) {
+                            writeCardCache(s.uid, s.name, s.face);
+                        }
+                    } catch (Throwable ignored) {
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+        try {
+            latch.await(60, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        pool.shutdownNow();
+    }
+
     private static void fillNameFace(MessageSession session) {
         if (session.name.length() > 0 && session.face.length() > 0) {
             return;

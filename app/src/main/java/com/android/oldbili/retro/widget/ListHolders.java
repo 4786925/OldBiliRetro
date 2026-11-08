@@ -417,7 +417,7 @@ public class ListHolders {
                     com.android.oldbili.retro.net.MessagePreviewLoader.load(session.uid, last);
                 }
             }
-            last.setText(preview);
+            last.setText(com.android.oldbili.retro.util.MsgText.preview(preview));
             time.setText(session.timeDesc());
             ImageLoader.get().load(avatar, ImageLoader.avatarUrl(session.face, 96));
             if (session.unread > 0) {

@@ -284,6 +284,20 @@ public class MessagePage {
                         }
                         saveCache();
                         updateMinTime(chats);
+                        // 后台慢慢补没名字的会话（最多 20 个），补完再刷新一次
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                MessageApi.fillRemainingNames(mAll, 20);
+                                mActivity.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        refreshAdapter();
+                                        saveCache();
+                                    }
+                                });
+                            }
+                        }).start();
                         mListPage.finishLoadMore(true);
                         mListPage.finishRefresh();
                     }
