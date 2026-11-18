@@ -26,10 +26,12 @@ public class OldBiliApp extends Application {
     public void onCreate() {
         super.onCreate();
         // 老设备经常没有 IPv6 路由，强制 IPv4
-        try {
-            System.setProperty("java.net.preferIPv4Stack", "true");
-            System.setProperty("java.net.preferIPv6Addresses", "false");
-        } catch (Throwable ignored) {
+        if (android.os.Build.VERSION.SDK_INT < 9) {
+            try {
+                System.setProperty("java.net.preferIPv4Stack", "true");
+                System.setProperty("java.net.preferIPv6Addresses", "false");
+            } catch (Throwable ignored) {
+            }
         }
         Sp.init(this);
         CrashHandler.init(this);

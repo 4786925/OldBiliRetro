@@ -127,14 +127,6 @@ public class PlayerActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Android 2.3 以下没有内置解码器：直接交给外部播放器
-        if (android.os.Build.VERSION.SDK_INT < 9) {
-            Intent ext = new Intent(this, ExternalPlayActivity.class);
-            ext.putExtras(getIntent());
-            startActivity(ext);
-            finish();
-            return;
-        }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // 切清晰度重进：第一时间保持横屏（在界面创建前设置，避免先竖后横"转一下"）
         if (getIntent().getBooleanExtra("landscape", false)) {
@@ -526,9 +518,11 @@ public class PlayerActivity extends Activity {
     }
 
     private void setIjkOptions(IjkMediaPlayer player) {
-        player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", mHardwareDecode ? 1 : 0);
-        player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles",
-                Sp.getBoolean(Sp.SET_DECODER_AUDIO, false) ? 1 : 0);
+        // MediaCodec 是 API 16 才有的，2.x 只能软解
+        boolean hwDecode = mHardwareDecode && android.os.Build.VERSION.SDK_INT >= 16;
+        player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", hwDecode ? 1 : 0);
+        // 2.3 以下没有 libOpenSLES，固定走 AudioTrack
+        player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 0);
         player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 1);
         player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 1);
         player.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop",

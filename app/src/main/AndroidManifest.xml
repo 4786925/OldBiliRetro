@@ -73,10 +73,6 @@
         </activity>
 
         <!-- 视频/直播播放（内置 IJK）：固定横屏，不参与横竖屏切换 -->
-        <activity
-            android:name=".ExternalPlayActivity"
-            android:theme="@android:style/Theme.Dialog"
-            android:exported="false" />
 
         <activity
             android:name=".PlayerActivity"
@@ -130,6 +126,10 @@
             android:exported="true" />
 
         <!-- 下载管理 -->
+        <activity
+            android:name=".DevDownloadActivity"
+            android:exported="true" />
+
         <activity
             android:name=".DownloadActivity"
             android:exported="true" />

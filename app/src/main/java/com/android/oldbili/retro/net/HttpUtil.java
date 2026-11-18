@@ -69,6 +69,11 @@ public class HttpUtil {
     private static final int MAX_RESPONSE_BYTES = 6 * 1024 * 1024;
 
     private static SSLSocketFactory sSslFactory;
+
+    /** 给下载等模块复用同一套 TLS 兼容层 */
+    public static SSLSocketFactory getSslFactory() {
+        return sSslFactory;
+    }
     private static HostnameVerifier sVerifier;
 
     private static final X509TrustManager TRUST_ALL = new X509TrustManager() {

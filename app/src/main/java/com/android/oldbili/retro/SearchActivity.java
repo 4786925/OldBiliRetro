@@ -196,7 +196,7 @@ public class SearchActivity extends BaseActivity {
                 if (mSearchType == 3) {
                     if (idx >= 0 && idx < mLives.size()) {
                         com.android.oldbili.retro.model.LiveRoom room = mLives.get(idx);
-                        Intent intent = PlayerLauncher.intent(SearchActivity.this);
+                        Intent intent = new Intent(SearchActivity.this, PlayerActivity.class);
                         intent.putExtra("live", true);
                         intent.putExtra("room_id", room.roomId);
                         intent.putExtra("title", room.title);

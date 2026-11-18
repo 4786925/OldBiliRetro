@@ -159,6 +159,7 @@ public class DownloadManager {
         persist();
         try {
             DownloadPathUtil.Folder folder = folderFor(task);
+            android.util.Log.i("Download", "开始下载到 " + folder.describe());
             folder.delete(task.fileName);
             folder.delete(task.fileName + ".part");
             if (task.saveCover && task.coverName.length() > 0) {
@@ -254,6 +255,7 @@ public class DownloadManager {
     private void runTask(final DownloadTask task) {
         try {
             DownloadPathUtil.Folder folder = folderFor(task);
+            android.util.Log.i("Download", "开始下载到 " + folder.describe());
             if (folder instanceof DownloadPathUtil.FileFolder) {
                 File dir = DownloadPathUtil.getPublicDownloadsDir();
                 if (!dir.exists()) {
@@ -274,8 +276,10 @@ public class DownloadManager {
             // （B 站已关闭明文 CDN 口，http 化地址会返回 959，直接放弃）
             java.util.List<String> ordered = new java.util.ArrayList<String>();
             // 先把所有候选规范化为 https 形式（CDN 已拒绝明文 http，会 403）
+            boolean legacyTls = android.os.Build.VERSION.SDK_INT < 9;
             for (int i = 0; i < rawCandidates.size(); i++) {
-                String u = toHttps(rawCandidates.get(i));
+                // 2.1/2.2 的系统 TLS 太旧，B 站 CDN 的 https 握手会失败：老设备直接用 http 直链
+                String u = legacyTls ? rawCandidates.get(i) : toHttps(rawCandidates.get(i));
                 if (u != null && !ordered.contains(u)) {
                     ordered.add(u);
                 }
@@ -344,6 +348,7 @@ public class DownloadManager {
 
             // 完成：改名 + 封面
             folder.rename(partName, task.fileName);
+            android.util.Log.i("Download", "下载完成: " + folder.pathOf(task.fileName));
 
             if (task.saveCover && task.cover != null && task.cover.length() > 0) {
                 try {
@@ -380,6 +385,19 @@ public class DownloadManager {
         java.net.HttpURLConnection conn =
                 (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
         try {
+            if (conn instanceof javax.net.ssl.HttpsURLConnection) {
+                try {
+                    ((javax.net.ssl.HttpsURLConnection) conn).setSSLSocketFactory(
+                            com.android.oldbili.retro.net.HttpUtil.getSslFactory());
+                    ((javax.net.ssl.HttpsURLConnection) conn).setHostnameVerifier(
+                            new javax.net.ssl.HostnameVerifier() {
+                                public boolean verify(String h, javax.net.ssl.SSLSession s) {
+                                    return true;
+                                }
+                            });
+                } catch (Throwable ignored) {
+                }
+            }
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(20000);
             // UA 必须与播放器一致（CDN 会按 UA 校验，自制 UA 会 403）
@@ -568,6 +586,7 @@ public class DownloadManager {
         }
         try {
             DownloadPathUtil.Folder folder = folderFor(task);
+            android.util.Log.i("Download", "开始下载到 " + folder.describe());
             folder.rename(task.fileName, newFileName);
             folder.rename(task.fileName + ".part", newFileName + ".part");
         } catch (Exception ignored) {

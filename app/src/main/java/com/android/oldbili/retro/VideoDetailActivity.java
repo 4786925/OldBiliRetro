@@ -611,7 +611,7 @@ public class VideoDetailActivity extends BaseActivity {
     }
 
     private void play(int pageIndex) {
-        Intent intent = PlayerLauncher.intent(this);
+        Intent intent = new Intent(this, PlayerActivity.class);
         if (mSeasonId > 0) {
             // 番剧分集：avid+cid 直达（bvid 走 wbi/playurl 只会给 360P）
             if (pageIndex >= 0 && pageIndex < mSeasonEps.size()) {

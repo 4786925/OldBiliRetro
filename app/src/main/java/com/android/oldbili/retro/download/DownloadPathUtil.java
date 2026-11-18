@@ -71,12 +71,17 @@ public class DownloadPathUtil {
 
         @Override
         public OutputStream openOutputStream(String name) throws FileNotFoundException {
-            return new java.io.FileOutputStream(new File(mDir, name));
+            return openOutputStream(name, false);
         }
 
         @Override
         public OutputStream openOutputStream(String name, boolean append) throws FileNotFoundException {
-            return new java.io.FileOutputStream(new File(mDir, name), append);
+            File f = new File(mDir, name);
+            File parent = f.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            return new java.io.FileOutputStream(f, append);
         }
 
         @Override
@@ -262,7 +267,12 @@ public class DownloadPathUtil {
                 Sp.putString(Sp.SET_DOWNLOAD_DIR, "");
             }
         }
-        return new FileFolder(getPublicDownloadsDir());
+        // 公共目录必须真的可写（2.x 插着 USB 大容量存储时 /sdcard 会不可写，
+        // 安卓 13+ 也会拒绝直接写），不可写就退回应用自己的目录。
+        if (isDirectDirWritable()) {
+            return new FileFolder(getPublicDownloadsDir());
+        }
+        return getAppFallbackFolder(context);
     }
 
     /** 公共下载文件夹里的子目录：Download/OldBiliRetro */
@@ -281,6 +291,9 @@ public class DownloadPathUtil {
         if (Build.VERSION.SDK_INT >= 8) {
             base = context.getExternalFilesDir(null);
         } else {
+            base = null;
+        }
+        if (base == null || (!base.exists() && !base.mkdirs()) || !base.canWrite()) {
             base = context.getFilesDir();
         }
         return new AppFolder(new File(base, "download"));
