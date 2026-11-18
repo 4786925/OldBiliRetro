@@ -74,6 +74,11 @@
 
         <!-- 视频/直播播放（内置 IJK）：固定横屏，不参与横竖屏切换 -->
         <activity
+            android:name=".ExternalPlayActivity"
+            android:theme="@android:style/Theme.Dialog"
+            android:exported="false" />
+
+        <activity
             android:name=".PlayerActivity"
             android:exported="true"
             android:configChanges="keyboardHidden|orientation|screenSize"

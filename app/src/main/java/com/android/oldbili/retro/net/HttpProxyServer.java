@@ -69,9 +69,10 @@ public class HttpProxyServer {
         }
     }
 
-    /** 把 https 流地址包成本地代理地址（http 地址原样返回） */
+    /** 把流地址包成本地代理地址（http/https 都走代理，好补 Referer/Cookie） */
     public String wrap(String url) {
-        if (url == null || !url.startsWith("https://") || mServer == null) {
+        if (url == null || mServer == null
+                || !(url.startsWith("https://") || url.startsWith("http://"))) {
             return url;
         }
         try {
@@ -136,7 +137,7 @@ public class HttpProxyServer {
                 client.close();
                 return;
             }
-            if (!target.startsWith("https://")) {
+            if (!(target.startsWith("https://") || target.startsWith("http://"))) {
                 client.close();
                 return;
             }

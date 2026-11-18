@@ -128,12 +128,39 @@ public class TlsSocketFactoryCompat extends SSLSocketFactory {
 
     @Override
     public Socket createSocket(String host, int port) throws IOException {
+        // 老系统（2.1/2.2）默认会先连 IPv6，很多老设备没有 IPv6 路由，
+        // 会直接报 “No route to host”，这里强制走 IPv4 再套 TLS。
+        if (android.os.Build.VERSION.SDK_INT < 9) {
+            try {
+                InetAddress ipv4 = firstIpv4(host);
+                if (ipv4 != null) {
+                    Socket raw = new Socket();
+                    raw.connect(new java.net.InetSocketAddress(ipv4, port), 15000);
+                    return upgrade(mDefault.createSocket(raw, host, port, true));
+                }
+            } catch (Throwable ignored) {
+                // 退回系统默认逻辑
+            }
+        }
         return upgrade(mDefault.createSocket(host, port));
+    }
+
+    private static InetAddress firstIpv4(String host) {
+        try {
+            InetAddress[] all = InetAddress.getAllByName(host);
+            for (int i = 0; i < all.length; i++) {
+                if (all[i] instanceof java.net.Inet4Address) {
+                    return all[i];
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     @Override
     public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
-        return upgrade(mDefault.createSocket(host, port, localHost, localPort));
+        return createSocket(host, port);
     }
 
     @Override

@@ -53,7 +53,7 @@ public class UrlOpenActivity extends Activity {
 
         // bilibili://video/123 或 bilibili://space/123
         if ("bilibili".equals(scheme)) {
-            String p = path.isEmpty() ? uri.getSchemeSpecificPart() : path;
+            String p = path.length() == 0 ? uri.getSchemeSpecificPart() : path;
             Matcher m = Pattern.compile("(\\d+)").matcher(p == null ? "" : p);
             if (m.find()) {
                 long id = Long.parseLong(m.group(1));

@@ -10,6 +10,7 @@ function obr_nav_items()
         'download'  => array('下载', 'download.php'),
         'changelog' => array('更新日志', 'changelog.php'),
         'faq'       => array('常见问题', 'faq.php'),
+    'player'    => array('老设备播放器', 'player.php'),
         'about'     => array('关于与声明', 'about.php'),
     );
 }

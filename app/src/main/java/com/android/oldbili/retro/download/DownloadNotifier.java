@@ -30,7 +30,7 @@ public class DownloadNotifier {
 
             Intent intent;
             if (filePath != null && filePath.length() > 0) {
-                intent = new Intent(ctx, PlayerActivity.class);
+                intent = com.android.oldbili.retro.PlayerLauncher.intent(ctx);
                 intent.putExtra("local_path", filePath);
                 intent.putExtra("title", task.title);
                 intent.putExtra("landscape", true);

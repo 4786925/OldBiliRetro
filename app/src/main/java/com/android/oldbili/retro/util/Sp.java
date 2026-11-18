@@ -91,7 +91,7 @@ public class Sp {
         try {
             return sSp.getString(key, def);
         } catch (ClassCastException e) {
-            sSp.edit().remove(key).apply();
+            sSp.edit().remove(key).commit();
             return def;
         }
     }
@@ -100,7 +100,7 @@ public class Sp {
         try {
             return sSp.getInt(key, def);
         } catch (ClassCastException e) {
-            sSp.edit().remove(key).apply();
+            sSp.edit().remove(key).commit();
             return def;
         }
     }
@@ -127,7 +127,7 @@ public class Sp {
         try {
             return sSp.getLong(key, def);
         } catch (ClassCastException e) {
-            sSp.edit().remove(key).apply();
+            sSp.edit().remove(key).commit();
             return def;
         }
     }
@@ -137,7 +137,7 @@ public class Sp {
             return sSp.getBoolean(key, def);
         } catch (ClassCastException e) {
             // 历史版本可能以别的类型存过同一个 key：删掉用默认值，避免崩溃
-            sSp.edit().remove(key).apply();
+            sSp.edit().remove(key).commit();
             return def;
         }
     }

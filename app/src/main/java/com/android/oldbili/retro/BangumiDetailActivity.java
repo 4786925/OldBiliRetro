@@ -138,7 +138,7 @@ public class BangumiDetailActivity extends BaseActivity {
         final Runnable start = new Runnable() {
             @Override
             public void run() {
-                Intent intent = new Intent(BangumiDetailActivity.this, PlayerActivity.class);
+                Intent intent = PlayerLauncher.intent(BangumiDetailActivity.this);
                 intent.putExtra("bvid", bvid);
                 // 番剧播放关键：avid+cid 直达（bvid 走 wbi/playurl 只会给 360P 甚至失败）
                 intent.putExtra("avid", ep.aid);

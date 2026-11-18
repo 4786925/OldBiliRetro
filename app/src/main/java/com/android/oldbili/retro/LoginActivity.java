@@ -66,6 +66,7 @@ public class LoginActivity extends BaseActivity {
 
     // ==================== 扫码登录 ====================
 
+
     private void generateQr() {
         mQrStatus.setText(R.string.login_qr_hint);
         new Thread(new Runnable() {
@@ -85,7 +86,8 @@ public class LoginActivity extends BaseActivity {
                             startPolling();
                         }
                     });
-                } catch (final Exception e) {
+                } catch (final Throwable e) {
+                    android.util.Log.e("Login", "二维码生成失败", e);
                     runOnUi(new Runnable() {
                         @Override
                         public void run() {
@@ -99,6 +101,14 @@ public class LoginActivity extends BaseActivity {
 
     /** ZXing 生成二维码位图（不依赖任何资源文件，长 URL 也不会越界空白） */
     private Bitmap renderQr(String content) {
+        // 安卓 2.x 上 zxing 3.x 内部用了 String.isEmpty()（API 9），
+        // 直接调用会 NoSuchMethodError，低版本改用工程自带的 Swetake 库。
+        if (android.os.Build.VERSION.SDK_INT < 9) {
+            Bitmap legacy = renderQrLegacy(content);
+            if (legacy != null) {
+                return legacy;
+            }
+        }
         try {
             int size = 400;
             java.util.Map<com.google.zxing.EncodeHintType, Object> hints =
@@ -117,8 +127,55 @@ public class LoginActivity extends BaseActivity {
             Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565);
             bitmap.setPixels(pixels, 0, size, 0, 0, size, size);
             return bitmap;
-        } catch (Exception e) {
-            android.util.Log.e("Login", "二维码生成失败: " + e.getMessage());
+        } catch (Throwable e) {
+            android.util.Log.e("Login", "zxing 生成失败: " + e);
+        }
+        return renderQrLegacy(content);
+    }
+
+    /** Swetake 老库：纯 Java，2.x 也能生成二维码 */
+    private Bitmap renderQrLegacy(String content) {
+        try {
+            com.swetake.util.Qrcode qr = new com.swetake.util.Qrcode();
+            qr.setQrcodeErrorCorrect('L');
+            qr.setQrcodeEncodeMode('B');
+            qr.setQrcodeVersion(7);
+            boolean[][] matrix = qr.calQrcode(content.getBytes("UTF-8"));
+            if (matrix == null || matrix.length < 7) {
+                return null;
+            }
+            int modules = matrix.length;
+            int margin = 2;
+            int target = 420;
+            int scale = target / (modules + margin * 2);
+            if (scale < 1) {
+                scale = 1;
+            }
+            int size = (modules + margin * 2) * scale;
+            int[] pixels = new int[size * size];
+            for (int i = 0; i < pixels.length; i++) {
+                pixels[i] = 0xFFFFFFFF;
+            }
+            for (int y = 0; y < modules; y++) {
+                for (int x = 0; x < modules; x++) {
+                    if (!matrix[y][x]) {
+                        continue;
+                    }
+                    int x0 = (x + margin) * scale;
+                    int y0 = (y + margin) * scale;
+                    for (int dy = 0; dy < scale; dy++) {
+                        int row = (y0 + dy) * size;
+                        for (int dx = 0; dx < scale; dx++) {
+                            pixels[row + x0 + dx] = 0xFF000000;
+                        }
+                    }
+                }
+            }
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565);
+            bitmap.setPixels(pixels, 0, size, 0, 0, size, size);
+            return bitmap;
+        } catch (Throwable e) {
+            android.util.Log.e("Login", "Swetake 二维码失败: " + e);
             return null;
         }
     }

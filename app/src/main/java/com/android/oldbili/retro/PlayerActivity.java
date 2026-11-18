@@ -127,6 +127,14 @@ public class PlayerActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Android 2.3 以下没有内置解码器：直接交给外部播放器
+        if (android.os.Build.VERSION.SDK_INT < 9) {
+            Intent ext = new Intent(this, ExternalPlayActivity.class);
+            ext.putExtras(getIntent());
+            startActivity(ext);
+            finish();
+            return;
+        }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // 切清晰度重进：第一时间保持横屏（在界面创建前设置，避免先竖后横"转一下"）
         if (getIntent().getBooleanExtra("landscape", false)) {

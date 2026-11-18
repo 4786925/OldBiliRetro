@@ -67,7 +67,7 @@ public class LiveRoomActivity extends BaseActivity {
         findViewById(R.id.live_play).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(LiveRoomActivity.this, PlayerActivity.class);
+                Intent intent = PlayerLauncher.intent(LiveRoomActivity.this);
                 intent.putExtra("live", true);
                 intent.putExtra("room_id", mRoomId);
                 intent.putExtra("title", mRoom != null ? mRoom.title : "");

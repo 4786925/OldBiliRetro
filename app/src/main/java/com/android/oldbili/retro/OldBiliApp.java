@@ -25,6 +25,12 @@ public class OldBiliApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        // 老设备经常没有 IPv6 路由，强制 IPv4
+        try {
+            System.setProperty("java.net.preferIPv4Stack", "true");
+            System.setProperty("java.net.preferIPv6Addresses", "false");
+        } catch (Throwable ignored) {
+        }
         Sp.init(this);
         CrashHandler.init(this);
         ImageLoader.init(this);
@@ -33,7 +39,9 @@ public class OldBiliApp extends Application {
         // 预热 UA 与 Cookie 静态块
         HttpUtil.TAG.length();
         notifyLastCrash();
-        registerFontCallbacks();
+        if (android.os.Build.VERSION.SDK_INT >= 14) {
+            registerFontCallbacks();
+        }
     }
 
     /** 上次崩溃提示：每个崩溃只提示一次，告诉用户日志位置 */
