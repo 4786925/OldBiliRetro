@@ -76,9 +76,6 @@ public class DanmakuHelper {
         // 弹幕行数：默认 0 = 不设上限，引擎按屏幕高度自动铺满全部区域
         // （以前默认 10 行，弹幕全部挤在屏幕最上面，观感像"全在顶部"）
         int maxLines = Sp.getInt(Sp.SET_DANMAKU_MAXLINE, 0);
-        if (lowEnd && (maxLines == 0 || maxLines > 8)) {
-            maxLines = 8;
-        }
         if (maxLines > 0) {
             Map<Integer, Integer> lines = new HashMap<Integer, Integer>();
             lines.put(BaseDanmaku.TYPE_SCROLL_RL, maxLines);

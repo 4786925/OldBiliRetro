@@ -20,6 +20,13 @@ public class DanmakuSettingsActivity extends BaseActivity {
     private LinearLayout mRows;
 
     @Override
+    protected void applyScreenOrientation() {
+        // 从「我的-设置」进入：固定竖屏（覆盖设置里的自动旋转）
+        setRequestedOrientation(
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // 只有从播放器进入时才强制横屏；从"我的→设置"进来保持竖屏

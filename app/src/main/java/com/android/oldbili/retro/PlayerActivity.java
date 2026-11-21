@@ -1256,27 +1256,31 @@ public class PlayerActivity extends Activity {
             return;
         }
         mDanmakuEnabled = !mDanmakuEnabled;
+        final long pos = mPlayer != null ? mPlayer.getCurrentPosition() : 0;
         if (mDanmakuEnabled) {
-            // 重新打开弹幕：等新解析器 prepare 完成后再对齐到当前播放位置，
-            // 否则引擎会从 0 开始，当前时间之前的弹幕永远不出现
-            final long pos = mPlayer != null ? mPlayer.getCurrentPosition() : 0;
-            loadDanmaku(new DanmakuHelper.ReadyListener() {
-                @Override
-                public void onReady() {
-                    DanmakuHelper.start(mDanmakuView);
-                    DanmakuHelper.seekTo(mDanmakuView, pos);
-                    mHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            DanmakuHelper.seekTo(mDanmakuView,
-                                    mPlayer != null ? mPlayer.getCurrentPosition() : pos);
-                        }
-                    }, 300);
-                }
-            });
+            if (mDanmakuView != null && mDanmakuView.isPrepared()) {
+                // 关闭时只是暂停+隐藏，数据还在：直接恢复并跟到当前进度，避免重新 prepare 失败
+                DanmakuHelper.start(mDanmakuView);
+                DanmakuHelper.seekTo(mDanmakuView, pos);
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        DanmakuHelper.seekTo(mDanmakuView,
+                                mPlayer != null ? mPlayer.getCurrentPosition() : pos);
+                    }
+                }, 300);
+            } else {
+                loadDanmaku(new DanmakuHelper.ReadyListener() {
+                    @Override
+                    public void onReady() {
+                        DanmakuHelper.start(mDanmakuView);
+                        DanmakuHelper.seekTo(mDanmakuView, pos);
+                    }
+                });
+            }
         } else {
+            DanmakuHelper.pause(mDanmakuView);
             mDanmakuView.hide();
-            mDanmakuView.removeAllDanmakus();
         }
         toast(mDanmakuEnabled ? R.string.player_danmaku_on : R.string.player_danmaku_off);
     }
