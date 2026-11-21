@@ -26,6 +26,10 @@ public class DynamicPage {
     private ListPage mListPage;
 
     private String mOffset = "";
+    /** 本次刷新是否正在用新数据替换旧缓存 */
+    private boolean mRefreshing;
+    /** 上次成功刷新时间（毫秒），用于自动过期刷新 */
+    private long mLastRefreshAt;
     private boolean mHasMore = true;
     private boolean mLoaded;
     private boolean mLastLogged;
@@ -93,7 +97,10 @@ public class DynamicPage {
             return;
         }
         boolean logged = HttpUtil.isLoggedIn();
-        if (!mLoaded || logged != mLastLogged) {
+        // 每次回到动态页：登录态变化、首次加载，或数据超过 5 分钟都自动刷新一次，
+        // 避免一直显示十几天前的旧动态
+        boolean stale = System.currentTimeMillis() - mLastRefreshAt > 5L * 60L * 1000L;
+        if (!mLoaded || logged != mLastLogged || stale) {
             mLoaded = true;
             mLastLogged = logged;
             refresh();
@@ -108,6 +115,7 @@ public class DynamicPage {
     private void refresh() {
         mOffset = "";
         mHasMore = true;
+        mRefreshing = true;
         mItems.clear();
         if (!HttpUtil.isLoggedIn()) {
             mListPage.showEmpty("未登录，点击去登录后查看动态");
@@ -156,7 +164,25 @@ public class DynamicPage {
                                 }
                             } catch (Exception ignored) {
                             }
-                            mItems.addAll(items);
+                            // 刷新时用第一页新数据整体替换旧缓存，避免“旧缓存 + 新数据”混在一起
+                            if (mRefreshing && (offset == null || offset.length() == 0)) {
+                                mItems.clear();
+                                mRefreshing = false;
+                                mLastRefreshAt = System.currentTimeMillis();
+                            }
+                            for (int i = 0; i < items.size(); i++) {
+                                DynamicItem item = items.get(i);
+                                boolean exists = false;
+                                for (int j = 0; j < mItems.size(); j++) {
+                                    if (mItems.get(j).dynamicId == item.dynamicId) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+                                if (!exists) {
+                                    mItems.add(item);
+                                }
+                            }
                             mListPage.setAdapter(new ListAdapters.DynamicList(mActivity, mItems));
                             if (first > 0) {
                                 try {

@@ -153,14 +153,23 @@ public class MinePage {
             return;
         }
         boolean logged = HttpUtil.isLoggedIn();
+        if (!logged) {
+            // 退出登录后必须清掉上一个账号的头像/昵称，避免残留
+            mLastLogged = false;
+            mUser = null;
+            mSign.setVisibility(View.GONE);
+            mSign.setText("");
+            mName.setText(R.string.not_login);
+            mAvatar.setImageResource(R.drawable.ic_avatar_default);
+            mLoginButton.setVisibility(View.VISIBLE);
+            return;
+        }
         if (logged == mLastLogged && mUser != null) {
             return;
         }
-        mLastLogged = logged;
+        mLastLogged = true;
         updateHeader();
-        if (logged) {
-            loadUser();
-        }
+        loadUser();
     }
 
     private void updateHeader() {

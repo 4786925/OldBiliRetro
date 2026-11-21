@@ -40,6 +40,8 @@ public class CacheUtil {
             Sp.putString("msg_page_cache", "[]");
             // 已读消息/未读标记等账号态
             Sp.putString("msg_unread_cache", "");
+            // 昵称/头像缓存也属于账号内容，退出登录一并清掉
+            Sp.putString("msg_card_cache", "{}");
                     } catch (Exception ignored) {
         }
     }
