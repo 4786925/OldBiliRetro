@@ -1,18 +1,27 @@
 # OldBiliRetro 当前状态快照
 
-> 最后更新：2026-11-08
+> 最后更新：2026-11-21
 > 每次大改动（发版、修重大 bug、服务器变更）后，更新这个文件。
 
 ## 版本与产物
 
 | 项目 | 值 |
 |---|---|
-| 当前版本 | **1.0.6 beta**（versionCode **8**，2026-11-08 重新打包：动态评论 + 消息加载修复） |
-| Git 提交 | 见 git log 最新 |
-| GitHub Release | https://github.com/4786925/OldBiliRetro/releases/tag/v1.0.6-beta |
+| 当前版本 | **1.0.6 fix**（versionCode **9**，2026-11-21） |
+| Git 提交 | `b01c31d` |
+| GitHub Release | https://github.com/4786925/OldBiliRetro/releases/tag/v1.0.6-fix |
 | 官网 | http://136.suzushikaze274.com/ |
-| 全架构包 | `OldBiliRetro-1.0.6-beta-full.apk`（15,212,860 字节，MD5 `DFF17AF0A82ACF68590EE050D31A0D93`） |
-| V7 精简包 | `OldBiliRetro-1.0.6-beta-armv7-lite.apk`（3,216,028 字节，MD5 `40204C1E1CCFBC11912E88CD1A040E7F`） |
+| 全架构包 | `OldBiliRetro-1.0.6-fix-full.apk`（15,208,908 字节，MD5 `D348C0D3F8E19AAD354A28A553B55C3A`） |
+| V7 精简包 | `OldBiliRetro-1.0.6-fix-armv7-lite.apk`（3,212,100 字节，MD5 `B0754055B679FE86EC3E6893AFC78EF1`） |
+
+## 2026-11-21 1.0.6 fix
+
+- 动态页：超过 5 分钟自动刷新，刷新替换旧缓存并按 ID 去重
+- 退出登录：清空头像/昵称/名片缓存；未登录点头像不进个人主页
+- 下载：公共目录不可写自动回退应用私有目录并自动建目录；2.x 走 HTTP 直链；下载连接复用 TLS 兼容层
+- 弹幕：低端机不再强制 8 行（不再全挤顶部）；关闭/重开即时恢复并跟随进度；暂停恢复用 resume；弹幕设置横竖屏固定
+- 2.1/2.2：Swetake 二维码可登录、强制 IPv4、Sp.commit、ActivityLifecycle 保护
+- 已知问题：2.3 以下内置 IJK 缺 libOpenSLES / libandroid(ANativeWindow)，播放器仍在移植
 
 ## 2026-11-08 追加修复
 
