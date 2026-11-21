@@ -1257,8 +1257,23 @@ public class PlayerActivity extends Activity {
         }
         mDanmakuEnabled = !mDanmakuEnabled;
         if (mDanmakuEnabled) {
-            loadDanmaku();
-            DanmakuHelper.start(mDanmakuView);
+            // 重新打开弹幕：等新解析器 prepare 完成后再对齐到当前播放位置，
+            // 否则引擎会从 0 开始，当前时间之前的弹幕永远不出现
+            final long pos = mPlayer != null ? mPlayer.getCurrentPosition() : 0;
+            loadDanmaku(new DanmakuHelper.ReadyListener() {
+                @Override
+                public void onReady() {
+                    DanmakuHelper.start(mDanmakuView);
+                    DanmakuHelper.seekTo(mDanmakuView, pos);
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            DanmakuHelper.seekTo(mDanmakuView,
+                                    mPlayer != null ? mPlayer.getCurrentPosition() : pos);
+                        }
+                    }, 300);
+                }
+            });
         } else {
             mDanmakuView.hide();
             mDanmakuView.removeAllDanmakus();
