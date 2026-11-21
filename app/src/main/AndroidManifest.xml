@@ -160,7 +160,13 @@
             android:exported="true" />
         <activity
             android:name=".DanmakuSettingsActivity"
+            android:screenOrientation="portrait"
             android:exported="true" />
+
+        <activity
+            android:name=".DanmakuSettingsLandscapeActivity"
+            android:screenOrientation="landscape"
+            android:exported="false" />
         <activity
             android:name=".BangumiListActivity"
             android:exported="true" />

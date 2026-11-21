@@ -1044,8 +1044,7 @@ public class PlayerActivity extends Activity {
         findViewById(R.id.btn_dm_settings).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(PlayerActivity.this, DanmakuSettingsActivity.class)
-                        .putExtra("landscape", true));
+                startActivity(new Intent(PlayerActivity.this, DanmakuSettingsLandscapeActivity.class));
             }
         });
         findViewById(R.id.btn_rotate).setOnClickListener(new View.OnClickListener() {
@@ -1241,7 +1240,7 @@ public class PlayerActivity extends Activity {
                 } catch (Exception ignored) {
                 }
             }
-            DanmakuHelper.start(mDanmakuView);
+            DanmakuHelper.resume(mDanmakuView);
             mBtnPlay.setImageResource(R.drawable.ic_pause);
         }
     }
@@ -1854,9 +1853,21 @@ public class PlayerActivity extends Activity {
         if (mDanmakuView != null && mDanmakuView.isPrepared()) {
             try {
                 DanmakuHelper.applyConfig();
-                // 触发一次行重排，让新字号/行数立即套用
-                mDanmakuView.seekTo(0L);
-            } catch (Exception ignored) {
+                if (mDanmakuEnabled) {
+                    if (mPlayer != null && mPlayer.isPlaying()) {
+                        // 继续原来的时间轴，避免“闪一下/从右边重来/没有弹幕”
+                        DanmakuHelper.resume(mDanmakuView);
+                        long pos = mPlayer.getCurrentPosition();
+                        long drift = Math.abs(mDanmakuView.getCurrentTime() - pos);
+                        if (drift > 2000L) {
+                            mDanmakuView.seekTo(Math.max(0L, pos));
+                        }
+                    } else {
+                        // 视频仍是暂停状态：保持冻结，但别把弹幕藏起来
+                        mDanmakuView.show();
+                    }
+                }
+            } catch (Throwable ignored) {
             }
         }
         if (mPlayer != null && mPrepared && !mPlayer.isPlaying()) {

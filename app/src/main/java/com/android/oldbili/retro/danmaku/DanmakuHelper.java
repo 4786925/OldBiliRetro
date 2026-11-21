@@ -204,6 +204,10 @@ public class DanmakuHelper {
                 return danmakus;
             }
             boolean forceScroll = Sp.getBoolean(Sp.SET_DANMAKU_FORCE_SCROLL, false);
+            int nTop = 0;
+            int nScroll = 0;
+            long minTime = Long.MAX_VALUE;
+            long maxTime = 0;
             for (int i = 0; i < mFields.size(); i++) {
                 String[] f = mFields.get(i);
                 try {
@@ -234,9 +238,24 @@ public class DanmakuHelper {
                     item.userHash = f[4];
                     item.setVisibility(true);
                     danmakus.addItem(item);
+                    if (item.time < minTime) {
+                        minTime = item.time;
+                    }
+                    if (item.time > maxTime) {
+                        maxTime = item.time;
+                    }
+                    if (type == BaseDanmaku.TYPE_FIX_TOP) {
+                        nTop++;
+                    } else if (type == BaseDanmaku.TYPE_SCROLL_RL) {
+                        nScroll++;
+                    }
                 } catch (Exception ignored) {
                 }
             }
+            android.util.Log.i("Danmaku", "parse 统计: total=" + mFields.size()
+                    + " scroll=" + nScroll + " top=" + nTop
+                    + " minTime=" + minTime + " maxTime=" + maxTime
+                    + " disp=" + (mDisp != null) + " density=" + mDispDensity);
             return danmakus;
         }
     }
@@ -307,10 +326,17 @@ public class DanmakuHelper {
                                     view.start();
                                     // 首次 prepare 时显示尺寸可能尚未就绪，弹幕行会全部挤在顶部；
                                     // 立即 seek 到 0 触发一次行重排（与"拖回 00:00 才正常"同理）
-                                    try {
-                                        view.seekTo(0L);
-                                    } catch (Exception ignored) {
-                                    }
+                                    // 第一次布局可能还没完成：稍后按当前时间重排一次，
+                                    // 避免所有弹幕都堆在顶部
+                                    postUiDelayed(view, new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                view.seekTo(Math.max(0L, view.getCurrentTime()));
+                                            } catch (Throwable ignored) {
+                                            }
+                                        }
+                                    }, 400);
                                     android.util.Log.i("Danmaku", "prepared 回调：引擎已启动 cid=" + cid);
                                     if (!readyOnce[0]) {
                                         readyOnce[0] = true;
@@ -324,7 +350,8 @@ public class DanmakuHelper {
                                 public void updateTimer(master.flame.danmaku.danmaku.model.DanmakuTimer timer) {
                                 }
                             });
-                            view.prepare(parser);
+                            // 视图还没测量好就 prepare，会导致弹幕行全部挤在顶部
+                            prepareWhenSized(view, parser, 0);
                             // 不启用 drawing cache：CacheManagingDrawTask 在大内存/新系统上
                             // 存在卡死问题（prepared 永远 false），普通 DrawTask 稳定
                             view.enableDanmakuDrawingCache(false);
@@ -346,6 +373,8 @@ public class DanmakuHelper {
                                             android.util.Log.i("Danmaku", "自检 " + (tick * 2)
                                                     + "s prepared=" + prepared
                                                     + " shown=" + view.isShown()
+                                                    + " vis=" + (((View) view).getVisibility())
+                                                    + " win=" + (((View) view).getWindowToken() != null)
                                                     + " w=" + vw + " h=" + vh);
                                         } catch (Exception e) {
                                             android.util.Log.w("Danmaku", "自检失败: " + e.getMessage());
@@ -470,8 +499,53 @@ public class DanmakuHelper {
     }
 
     /** 开始/恢复滚动 */
+    /** 等 View 完成测量后再 prepare，否则弹幕行会全部挤在顶部 */
+    private static void prepareWhenSized(final IDanmakuView view, final BaseDanmakuParser parser,
+                                         final int attempt) {
+        int w = 0;
+        int h = 0;
+        if (view instanceof View) {
+            w = ((View) view).getWidth();
+            h = ((View) view).getHeight();
+        }
+        if ((w > 0 && h > 0) || attempt >= 20) {
+            if (attempt >= 20) {
+                android.util.Log.w("Danmaku", "view 尺寸等待超时，直接 prepare");
+            }
+            android.util.Log.i("Danmaku", "prepare now w=" + w + " h=" + h + " attempt=" + attempt);
+            try {
+                view.show();
+                view.prepare(parser);
+                android.util.Log.i("Danmaku", "prepare 调用完成 prepared=" + view.isPrepared());
+            } catch (Throwable e) {
+                android.util.Log.e("Danmaku", "prepare 失败: " + e, e);
+            }
+            return;
+        }
+        postUiDelayed(view, new Runnable() {
+            @Override
+            public void run() {
+                prepareWhenSized(view, parser, attempt + 1);
+            }
+        }, 100);
+    }
+
+    /** 从暂停恢复：继续原来的时间轴，不回到开头、也不闪一下 */
+    public static void resume(IDanmakuView view) {
+        if (view != null && view.isPrepared()) {
+            if (view instanceof View) {
+                ((View) view).setVisibility(View.VISIBLE);
+            }
+            view.show();
+            view.resume();
+        }
+    }
+
     public static void start(IDanmakuView view) {
         if (view != null && view.isPrepared()) {
+            if (view instanceof View) {
+                ((View) view).setVisibility(View.VISIBLE);
+            }
             view.show();
             view.start();
         }
@@ -486,7 +560,6 @@ public class DanmakuHelper {
             view.pause();
         }
         // 未 prepared 或暂停消息没生效时兜底：直接隐藏，保证"暂停后弹幕一定停"
-        view.hide();
     }
 
     /** 定位到指定时间 */
